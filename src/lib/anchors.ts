@@ -52,38 +52,77 @@ hh hh hh | kit 909 | gain 0.26 -- hats, 3 contra 4
 ~ <9 ~> ~ ~ 7 ~ ~ <12 ~> | synth piano | scale menor | delay 0.5 | pan -0.35 | gain 0.4 -- detalles`
   ),
   // ---------------------------------------------------------------- ÓXIDO
+  // (grid: one step = one eighth, 8 steps = a bar — the kick sits on the
+  // even steps, so 138 means 138)
   anchor(
     "oxido",
     "Herrumbre madre",
-    140,
-    `bd:3 bd bd bd | kit 909 | drive 0.65 | gain 0.9 -- el martillo
-~ ~ sn ~ | kit 909 | drive 0.55 | gain 0.5 -- caja seca
-hh hh hh hh | kit 909 | fast 2 | drive 0.35 | gain 0.28 -- hats de máquina
-mt ~ mt mt ~ | drive 0.5 | pan -0.4 | gain 0.5 -- mt rodando, 5 contra 4
-ht(7,16) | drive 0.4 | pan 0.35 | gain 0.38 | every 4 rev -- grieta
-0 0 0 <0 -3> | synth bass | scale menor | lpf 320 | drive 0.5 | gain 0.65 -- sub pulsado`
+    138,
+    `bd ~ bd ~ bd ~ bd ~ | kit 909 | drive 0.5 | gain 0.9 -- el martillo
+lt lt mt ~ lt ~ mt ~ | drive 0.7 | pan -0.4 | gain 0.55 | every 4 rev -- toms en círculo
+ho ho ho ho ho ho ho ho | kit 909 | lpf 7000 | drive 0.3 | gain 0.34 -- cortina de ride
+~ hh ~ hh ~ hh ~ hh? | kit 909 | drive 0.3 | gain 0.3 -- hat a contratiempo
+~ ~ cp ~ ~ ~ cp ~ | kit 909 | drive 0.4 | gain 0.46 -- palmada seca
+0 ~ 0 ~ 0 ~ <0 1> ~ | synth bass | scale frigia | lpf 300 | drive 0.4 | gain 0.65 -- sub a pulsos, con el roce
+rm ~ ~ rm ~ ~ rm ~ ~ ~ rm ~ ~ rm ~ ~ | drive 0.5 | pan 0.35 | gain 0.4 -- rim en tresillos`
   ),
   anchor(
     "oxido",
     "Turno de noche",
-    138,
-    `bd bd bd bd | kit 909 | drive 0.7 | gain 0.9 -- el martillo
-~ ~ sn:6 ~ | kit 909 | drive 0.6 | gain 0.48 -- caja seca
-hh hh hh hh? | kit 909 | fast 2 | drive 0.4 | gain 0.3 -- hats de máquina
-rm ~ ~ rm ~ rm ~ | drive 0.5 | pan 0.4 | gain 0.5 -- rm rodando, 7 contra 4
-<-7 -5> ~ | synth pad | scale menor | slow 4 | lpf 350 | drive 0.4 | gain 0.6 -- drone grave
-<0 -2> ~ ~ | synth pad | scale menor | slow 4 | lpf 700 | gain 0.3 -- niebla`
+    128,
+    `bd ~ bd ~ bd ~ bd ~ | kit 909 | drive 0.4 | gain 0.9 -- el martillo, hondo
+rm ~ ~ rm ~ rm ~ | drive 0.3 | delay 0.22 | reverb 0.25 | pan 0.4 | gain 0.44 -- el látigo
+lt ~ ~ ~ ~ ~ ~ ~ lt? ~ ~ ~ | drive 0.4 | pan -0.35 | gain 0.45 -- tom perdido
+hh? ~ hh ~ hh? ~ hh ~ | kit 909 | lpf 5000 | drive 0.25 | gain 0.3 -- hats escasos
+~ ~ ~ ~ sn ~ ~ ~ | kit 909 | reverb 0.28 | delay 0.18 | drive 0.3 | gain 0.42 -- caja helada
+<0 1 0 4> ~ ~ ~ ~ ~ ~ ~ | synth pad | scale frigia | slow 4 | lpf 850 | reverb 0.3 | gain 0.5 -- cuerdas ominosas
+0 ~ ~ ~ 0 ~ ~ ~ | synth bass | scale frigia | lpf 200 | drive 0.3 | gain 0.64 -- sub`
   ),
   anchor(
     "oxido",
     "Viga y martillo",
-    142,
-    `bd bd bd bd | kit 909 | drive 0.75 | gain 0.9 -- el martillo
-~ ~ ~ [bd bd] | kit 909 | drive 0.6 | gain 0.45 -- doble bombo
-~ ~ sn ~ | kit 909 | drive 0.5 | gain 0.5 -- caja seca
-lt ~ ~ lt lt ~ ~ | drive 0.55 | pan -0.45 | gain 0.52 | every 4 rev -- lt rodando, 7 contra 4
-hh hh hh hh | kit 909 | fast 2 | drive 0.45 | gain 0.26 -- hats de máquina
-0 0 0 <0 -5> | synth bass | scale menor | lpf 280 | drive 0.55 | gain 0.68 -- sub pulsado`
+    136,
+    `bd ~ bd ~ bd ~ bd [~ bd?] | kit 909 | drive 0.9 | gain 0.9 -- el martillo al rojo
+cb ~ rm ~ ~ | drive 0.85 | lpf 4500 | pan 0.4 | gain 0.5 -- chatarra, 5 pasos
+rm ~ ~ cb ~ ~ ~ rm ~ | drive 0.8 | lpf 3500 | pan -0.35 | gain 0.44 | every 3 rev -- chatarra, 9 pasos
+hh? hh hh? hh hh hh? hh hh | fast 2 | kit 909 | drive 0.8 | gain 0.3 -- hats de ruido
+~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ sn ~ ~ ~ | kit 909 | drive 0.8 | gain 0.46 -- caja de ruido, cada dos compases
+0 0 ~ 0 ~ <0 1> 0 ~ | synth acid | scale frigia | lpf 750 | drive 0.6 | gain 0.6 -- gancho ácido`
+  ),
+  anchor(
+    "oxido",
+    "Polígono, de madrugada",
+    135,
+    `bd ~ bd ~ bd ~ bd ~ | kit 909 | drive 0.55 | gain 0.9 -- el martillo
+hh hh hh hh? hh hh hh? hh | fast 2 | kit 909 | drive 0.35 | gain 0.3 -- hats hipnóticos
+~ ho ~ ho ~ ho ~ ho | kit 909 | lpf 6000 | drive 0.3 | gain 0.3 -- ride oscuro
+~ ~ ~ ~ sn ~ ~ [~ sn?] | kit 909 | drive 0.45 | gain 0.45 -- caja seca en el tres
+0 ~ 0 3 ~ 0 <3 -2> ~ | synth acid | scale menor | lpf 800 | drive 0.5 | gain 0.6 | every 4 rev -- el estribillo
+mt ~ ~ mt ~ ~ mt ~ ~ ~ | drive 0.45 | pan -0.4 | gain 0.42 -- percusión rodando
+<0 1> ~ ~ ~ ~ ~ ~ ~ | synth pad | scale frigia | slow 4 | lpf 550 | drive 0.25 | gain 0.42 -- niebla de polígono`
+  ),
+  anchor(
+    "oxido",
+    "Danza de la grúa",
+    131,
+    `bd ~ ~ bd ~ ~ bd ~ | kit 909 | drive 0.45 | gain 0.9 -- el martillo, roto
+lt(5,8) | drive 0.45 | pan 0.4 | gain 0.52 -- toms tribales
+mt ~ ~ mt ~ mt ~ ~ ~ mt | drive 0.4 | pan -0.35 | gain 0.44 | every 4 rev -- toms, la respuesta
+hh(7,16) | kit 909 | drive 0.3 | lpf 6000 | swing 0.15 | gain 0.33 -- hats euclídeos
+~ ~ ~ ~ rm ~ ~ ~ | drive 0.35 | swing 0.15 | gain 0.4 -- rim en el tres
+~ ~ ~ ho ~ ~ ~ ~ ~ ho ~ | drive 0.3 | lpf 5500 | gain 0.28 -- hat abierto, 11 pasos
+0 ~ ~ 0 ~ ~ 0 ~ | synth bass | scale penta | lpf 300 | drive 0.4 | gain 0.6 -- bajo en tresillo`
+  ),
+  anchor(
+    "oxido",
+    "Garaje de chapa",
+    130,
+    `bd ~ bd ~ bd ~ bd ~ | kit 909 | drive 0.45 | gain 0.9 -- el martillo, pesado
+rm ~ ~ cb ~ rm ~ ~ ~ ~ rm ~ cb ~ ~ ~ rm ~ | swing 0.35 | drive 0.45 | lpf 5000 | pan 0.35 | gain 0.46 -- metal, 18 pasos
+cb ~ ~ rm? ~ ~ cb ~ ~ ~ | swing 0.35 | drive 0.45 | pan -0.3 | gain 0.4 -- metal, 10 pasos
+~ hh ~ hh ~ hh ~ hh | kit 909 | swing 0.35 | drive 0.4 | gain 0.3 -- hat crudo
+0 0 <0 3> 0 0 <5 0> 0 0 | synth acid | scale menor | lpf 650 | delay 0.22 | drive 0.45 | gain 0.58 | every 8 rev -- ácido que gruñe
+-7 ~ ~ ~ ~ ~ ~ ~ | synth bass | scale menor | lpf 200 | drive 0.3 | gain 0.6 -- bajo clavado`
   ),
   // ----------------------------------------------------------------- CASA
   anchor(
@@ -147,5 +186,53 @@ bd ~ ~ ~ ~ ~ ~ ~ | lpf 220 | reverb 0.35 | gain 0.48 -- latido enterrado`
 <0 2 -2 3> ~ ~ ~ ~ | synth pad | scale menor | slow 4 | delay 0.38 | reverb 0.68 | gain 0.48 -- bruma
 9 ~ ~ <7 ~> ~ ~ ~ <12 14> ~ | synth piano | scale menor | delay 0.58 | reverb 0.42 | gain 0.4 -- destellos
 ho ~ ~ ~ ~ | lpf 480 | pan -0.4 | gain 0.2 -- aliento`
+  ),
+  anchor(
+    "niebla",
+    "Sala de espera",
+    63,
+    `~ ~ 4 ~ ~ ~ ~ | synth pad | scale lidia | slow 4 | lpf 3000 | delay 0.35 | reverb 0.78 | pan -0.4 | gain 0.42 -- cinta 7
+<7 6> ~ ~ ~ ~ ~ ~ ~ ~ | synth pad | scale lidia | slow 4 | lpf 2600 | delay 0.35 | reverb 0.78 | pan 0.3 | gain 0.4 -- cinta 9
+~ ~ ~ ~ ~ 2 ~ ~ ~ ~ ~ | synth pad | scale lidia | slow 4 | lpf 3400 | delay 0.35 | reverb 0.78 | pan 0.45 | gain 0.38 -- cinta 11
+~ ~ ~ ~ ~ ~ ~ 11 ~ ~ ~ ~ ~ | synth piano | scale lidia | slow 4 | delay 0.4 | reverb 0.78 | pan -0.25 | gain 0.4 -- cinta 13
+0 ~ ~ ~ ~ ~ ~ ~ | synth bass | scale lidia | slow 8 | lpf 200 | gain 0.46 -- suelo pedal`
+  ),
+  anchor(
+    "niebla",
+    "Réquiem para un radiador",
+    64,
+    `<0 -3> ~ ~ ~ ~ ~ ~ ~ | synth pad | scale mayor | slow 8 | lpf 1800 | reverb 0.9 | gain 0.48 -- suelo coral
+~ ~ <4 2> ~ ~ ~ ~ ~ ~ | synth pad | scale mayor | slow 8 | lpf 2100 | reverb 0.9 | pan 0.35 | gain 0.43 -- voz media
+~ ~ ~ 7 ~ ~ ~ ~ ~ ~ | synth pad | scale mayor | slow 8 | lpf 2400 | reverb 0.9 | pan -0.4 | gain 0.38 -- voz alta
+~ ~ <11 9> ~ ~ | synth piano | scale mayor | slow 6 | delay 0.2 | reverb 0.65 | pan 0.4 | gain 0.28 -- piano al fondo`
+  ),
+  anchor(
+    "niebla",
+    "Nueve postales",
+    70,
+    `7 ~ 9 ~ ~ 11? ~ | synth piano | scale penta | slow 2 | delay 0.5 | reverb 0.45 | pan 0.4 | gain 0.45 -- cristal
+~ ~ 4 ~ ~ ~ 2? ~ ~ | synth piano | scale penta | slow 3 | delay 0.5 | reverb 0.45 | pan -0.4 | gain 0.36 -- eco cruzado
+-7 ~ ~ ~ | synth bass | scale penta | slow 8 | lpf 240 | gain 0.4 -- suelo de agua
+~ ~ rm? ~ ~ ~ ~ | slow 2 | lpf 3000 | delay 0.5 | reverb 0.5 | pan 0.25 | gain 0.12 -- gota`
+  ),
+  anchor(
+    "niebla",
+    "Cuarto del curandero",
+    108,
+    `bd ~ ~ ~ bd ~ ~ ~ | lpf 260 | reverb 0.3 | gain 0.42 -- latido dub
+~ <0 2> ~ ~ ~ ~ | synth pad | scale dorica | slow 2 | lpf 1100 | delay 0.7 | reverb 0.7 | pan 0.3 | gain 0.46 -- acorde ahogado
+<0 -5> ~ ~ ~ ~ ~ ~ ~ | synth bass | scale dorica | slow 2 | lpf 210 | gain 0.52 -- suelo dub
+~ ~ ~ ~ 7 ~ ~ ~ ~ | synth piano | scale dorica | slow 4 | delay 0.7 | reverb 0.6 | pan -0.4 | gain 0.32 -- nota lejana
+~ hh? ~ hh? ~ hh? ~ hh? | lpf 1500 | gain 0.12 -- siseo`
+  ),
+  anchor(
+    "niebla",
+    "Deshielo",
+    62,
+    `-12 ~ ~ ~ ~ ~ ~ ~ | synth bass | scale frigia | slow 8 | lpf 200 | gain 0.52 -- suelo glaciar
+<0 1> ~ ~ ~ ~ ~ ~ ~ ~ | synth pad | scale frigia | slow 8 | lpf 600 | reverb 0.92 | drive 0.2 | gain 0.46 -- el roce
+~ ~ ~ ~ <7 ~> ~ ~ ~ ~ ~ ~ | synth pad | scale frigia | slow 8 | lpf 900 | reverb 0.92 | pan 0.4 | gain 0.34 -- luz lejana
+ho ~ ~ ~ ~ ~ ~ | slow 2 | lpf 320 | reverb 0.92 | pan -0.3 | gain 0.18 -- viento
+~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ rm? ~ ~ ~ ~ | lpf 1200 | delay 0.65 | reverb 0.7 | gain 0.14 -- crujido de hielo`
   ),
 ];
