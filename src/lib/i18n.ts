@@ -241,6 +241,17 @@ const ES: Record<string, string> = {
   "fm.replay": "repetición",
   "fm.backLive": "directo",
   "fm.id": "sintonía de cadena",
+  "fm.record": "grabar este tema",
+  "fm.recording": "grabando {p}",
+  "fm.recorded": "WAV descargado — intro, cuerpo, salida y fundido ✓",
+  "fm.recordError": "no se ha podido grabar",
+  "fm.recordLength": "duración",
+  "fm.cover": "portada",
+  "fm.recordNote": "un WAV con arreglo, listo para subir",
+  "fm.singles": "Singles",
+  "fm.singlesNote":
+    "Temas de la radio grabados y publicados en SoundCloud. El reproductor solo se carga si lo pides: hasta entonces nada sale de tu navegador.",
+  "fm.openSoundcloud": "abrir en SoundCloud",
   "fm.note":
     "La emisión es una función del reloj: todo el que sintoniza ahora oye este mismo tema, sin servidores. Si te gusta, remézclalo — el directo sigue para los demás.",
 
@@ -467,6 +478,17 @@ const EN: Record<string, string> = {
   "fm.replay": "replay",
   "fm.backLive": "live",
   "fm.id": "station ID",
+  "fm.record": "record this track",
+  "fm.recording": "recording {p}",
+  "fm.recorded": "WAV downloaded — intro, body, outro and fade ✓",
+  "fm.recordError": "recording failed",
+  "fm.recordLength": "length",
+  "fm.cover": "cover art",
+  "fm.recordNote": "an arranged WAV, ready to upload",
+  "fm.singles": "Singles",
+  "fm.singlesNote":
+    "Radio tracks recorded and released on SoundCloud. The player loads only when you ask: until then nothing leaves your browser.",
+  "fm.openSoundcloud": "open on SoundCloud",
   "fm.note":
     "The broadcast is a function of the clock: everyone tuning in right now hears this same track, with no servers. Like it? Remix it — the live feed goes on for everyone else.",
 

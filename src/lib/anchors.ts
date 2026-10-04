@@ -9,8 +9,22 @@ const anchor = (
   style: Track["style"],
   title: string,
   bpm: number,
-  code: string
-): Track => ({ style, title, bpm, code, states: [code] });
+  code: string,
+  /** optional arrangement: earlier states are thinner pictures of `code` */
+  intro: string[] = []
+): Track => ({ style, title, bpm, code, states: [...intro, code] });
+
+// "Nave 7" — the station's first single. The hypnotic loop with a chorus,
+// built in four pictures so a recording has somewhere to go.
+const NAVE7_KICK = "bd ~ bd ~ bd ~ bd ~ | kit 909 | drive 0.55 | sub 0.45 | rumble 0.4 | gain 0.9 -- el martillo";
+const NAVE7_HATS = "hh hh hh hh? hh hh hh? hh | fast 2 | kit 909 | drive 0.35 | gain 0.3 -- hats hipnóticos";
+const NAVE7_RIDE = "~ ho ~ ho ~ ho ~ ho | kit 909 | lpf 6000 | drive 0.3 | gain 0.3 -- ride oscuro";
+const NAVE7_SUB = "0 _ ~ ~ 0 _ ~ <0 1> | synth sub | scale frigia | duck 0.4 | gain 0.62 -- sub, con el roce";
+const NAVE7_PERC = "mt ~ ~ mt ~ ~ mt ~ ~ ~ | drive 0.45 | pan -0.4 | gain 0.42 -- percusión rodando, 10 pasos";
+const NAVE7_HOOK =
+  "0^ ~ 0 3 ~ 0 _ <3 1> | synth acid | scale frigia | cutoff 420 | res 0.72 | env 0.7 | decay 0.3 | drive 0.5 | duck 0.35 | gain 0.6 | every 4 rev -- el estribillo";
+const NAVE7_SNARE = "~ ~ ~ ~ sn ~ ~ [~ sn?] | kit 909 | drive 0.45 | gain 0.45 -- caja seca en el tres";
+const NAVE7_FOG = "<0 1> ~ ~ ~ ~ ~ ~ ~ | synth pad | scale frigia | slow 4 | lpf 550 | drive 0.25 | duck 0.5 | gain 0.42 -- niebla de polígono";
 
 export const ANCHORS: Track[] = [
   // ---------------------------------------------------------------- MOTOR
@@ -54,6 +68,17 @@ hh hh hh | kit 909 | gain 0.26 -- hats, 3 contra 4
   // ---------------------------------------------------------------- ÓXIDO
   // (grid: one step = one eighth, 8 steps = a bar — the kick sits on the
   // even steps, so 138 means 138)
+  anchor(
+    "oxido",
+    "Nave 7",
+    134,
+    [NAVE7_KICK, NAVE7_HATS, NAVE7_RIDE, NAVE7_SUB, NAVE7_PERC, NAVE7_HOOK, NAVE7_SNARE, NAVE7_FOG].join("\n"),
+    [
+      [NAVE7_KICK, NAVE7_HATS, NAVE7_RIDE].join("\n"),
+      [NAVE7_KICK, NAVE7_HATS, NAVE7_RIDE, NAVE7_SUB, NAVE7_PERC].join("\n"),
+      [NAVE7_KICK, NAVE7_HATS, NAVE7_RIDE, NAVE7_SUB, NAVE7_PERC, NAVE7_HOOK, NAVE7_SNARE].join("\n"),
+    ]
+  ),
   anchor(
     "oxido",
     "Herrumbre madre",

@@ -7,13 +7,22 @@ import { migrateLegacyStorage } from "./lib/migrate";
 import "./index.css";
 import { audioEngine } from "./lib/audioEngine";
 import { parsePattern } from "./lib/parser";
+import { compose } from "./lib/composer";
+import { ANCHORS } from "./lib/anchors";
+import { radioAt } from "./lib/radio";
 
 migrateLegacyStorage(); // bombocaja.* → bakaluti.* before anything reads storage
 
 // Dev-only lab hook: render patterns offline from the console / automation
 // (window.__bakaluti.audioEngine.renderWav(parsePattern(code).lanes)).
 if (import.meta.env.DEV) {
-  (window as unknown as { __bakaluti: unknown }).__bakaluti = { audioEngine, parsePattern };
+  (window as unknown as { __bakaluti: unknown }).__bakaluti = {
+    audioEngine,
+    parsePattern,
+    compose,
+    ANCHORS,
+    radioAt,
+  };
 }
 document.documentElement.lang = getLang();
 

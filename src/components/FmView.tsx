@@ -5,6 +5,9 @@ import { audioEngine } from "../lib/audioEngine";
 const CodeEditor = lazy(() => import("./CodeEditor"));
 import { radioAt, CHANNELS, SLOT_SECONDS, ID_SECONDS, type Dial, type OnAir } from "../lib/radio";
 import { momentUrl, type SharedMoment } from "../lib/share";
+import { downloadBlob, slug } from "../lib/download";
+import { coverPng } from "../lib/cover";
+import { SINGLES, playerSrc, type Single } from "../lib/singles";
 import Visualizer from "./Visualizer";
 import { getLang, t } from "../lib/i18n";
 
@@ -35,6 +38,10 @@ export default function FmView({ onRemix, onIaRemix, moment, onClearMoment }: Pr
   /** seconds between the listened broadcast and the wall clock (0 = live) */
   const [offset, setOffset] = useState(() => (moment ? moment.t - nowSeconds() : 0));
   const [notice, setNotice] = useState<string | null>(null);
+  const [recMinutes, setRecMinutes] = useState(4);
+  /** which single's SoundCloud player the listener asked to load */
+  const [player, setPlayer] = useState<Single | null>(null);
+  const [recording, setRecording] = useState<string | null>(null);
   const [air, setAir] = useState<OnAir>(() =>
     radioAt(moment?.dial ?? "fm", moment ? moment.t : nowSeconds())
   );
@@ -118,6 +125,36 @@ export default function FmView({ onRemix, onIaRemix, moment, onClearMoment }: Pr
     window.setTimeout(() => setNotice(null), 2200);
   };
 
+  /** A standalone recording of the track on air: arrangement + fade. */
+  const recordTrack = async () => {
+    if (recording) return;
+    const track = air.track;
+    setRecording("0%");
+    try {
+      const blob = await audioEngine.renderTrack(track, recMinutes * 60, (done, total) =>
+        setRecording(`${Math.round((done / total) * 100)}%`)
+      );
+      downloadBlob(`bakaluti-${slug(track.title)}.wav`, blob);
+      setNotice(t("fm.recorded"));
+    } catch {
+      setNotice(t("fm.recordError"));
+    } finally {
+      setRecording(null);
+      window.setTimeout(() => setNotice(null), 3000);
+    }
+  };
+
+  const makeCover = async () => {
+    const track = air.track;
+    const blob = await coverPng({
+      title: track.title,
+      channel: CHANNELS[track.style],
+      bpm: track.bpm,
+      code: track.code,
+    });
+    downloadBlob(`bakaluti-${slug(track.title)}.png`, blob);
+  };
+
   // preview past the next slot's ID window, so it names the actual track
   const upNext = radioAt(dial, (air.slot + 1) * SLOT_SECONDS + ID_SECONDS + 1);
   const live = tuned && playing;
@@ -162,6 +199,30 @@ export default function FmView({ onRemix, onIaRemix, moment, onClearMoment }: Pr
             </small>
           </button>
         </section>
+
+        {SINGLES.length > 0 && (
+          <section>
+            <h3 className="text-[10px] uppercase tracking-[0.25em] text-fog mb-2">{t("fm.singles")}</h3>
+            {SINGLES.map((single) => (
+              <button
+                key={single.url}
+                onClick={() => setPlayer(player?.url === single.url ? null : single)}
+                className={
+                  "block w-full text-left border px-3 py-2 mb-2 transition-all " +
+                  (player?.url === single.url
+                    ? "border-mag text-mag"
+                    : "border-white/10 text-slate-200 hover:border-mag/60 hover:text-mag")
+                }
+              >
+                <b className="block text-[11px] font-normal">▸ {single.title}</b>
+                <span className="text-[9px] uppercase tracking-wider text-fog">
+                  {CHANNELS[single.style]} · {single.bpm} bpm · SoundCloud
+                </span>
+              </button>
+            ))}
+            <p className="text-[9px] text-fog/70 leading-relaxed">{t("fm.singlesNote")}</p>
+          </section>
+        )}
 
         <section>
           <h3 className="text-[10px] uppercase tracking-[0.25em] text-fog mb-2">{t("fm.next")}</h3>
@@ -327,6 +388,91 @@ export default function FmView({ onRemix, onIaRemix, moment, onClearMoment }: Pr
             )}
           </div>
           {notice && <p className="mt-2 text-[10px] text-acid">{notice}</p>}
+
+          {/* the recording desk: a standalone WAV of the track on air */}
+          {!air.isStationId && (
+            <div className="flex items-center gap-2 flex-wrap mt-3 text-[10px] uppercase tracking-widest">
+              <button
+                onClick={() => void recordTrack()}
+                disabled={recording !== null}
+                className="px-4 py-2 border border-red-500/50 text-red-400 hover:bg-red-500 hover:text-black transition-all disabled:opacity-60"
+              >
+                {recording ? (
+                  <span className="blink">● {t("fm.recording", { p: recording })}</span>
+                ) : (
+                  <span>
+                    <span className="text-red-500">●</span> {t("fm.record")}
+                  </span>
+                )}
+              </button>
+              <select
+                value={recMinutes}
+                onChange={(e) => setRecMinutes(Number(e.target.value))}
+                aria-label={t("fm.recordLength")}
+                className="px-1 py-2 bg-black border border-white/15 text-fog outline-none"
+              >
+                {[3, 4, 5].map((n) => (
+                  <option key={n} value={n}>
+                    {n} min
+                  </option>
+                ))}
+              </select>
+              <button
+                onClick={() => void makeCover()}
+                className="px-3 py-2 border border-white/15 text-fog hover:text-acid hover:border-acid/60 transition-all"
+              >
+                {t("fm.cover")}
+              </button>
+              <span className="text-fog/60 normal-case tracking-normal">{t("fm.recordNote")}</span>
+            </div>
+          )}
+
+          {/* the released singles: SoundCloud's player, loaded on request */}
+          {SINGLES.length > 0 && (
+            <div className="mt-6 border border-white/10 bg-panel p-3">
+              <div className="flex items-center gap-2 flex-wrap text-[10px] uppercase tracking-[0.2em] text-fog">
+                <span>{t("fm.singles")}</span>
+                {SINGLES.map((single) => (
+                  <button
+                    key={single.url}
+                    onClick={() => setPlayer(player?.url === single.url ? null : single)}
+                    className={
+                      "px-2.5 py-1 border transition-all " +
+                      (player?.url === single.url
+                        ? "border-mag text-mag"
+                        : "border-white/15 text-slate-200 hover:border-mag/60 hover:text-mag")
+                    }
+                  >
+                    ▸ {single.title}
+                  </button>
+                ))}
+                {player && (
+                  <a
+                    href={player.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="ml-auto px-2.5 py-1 border border-white/15 text-fog hover:text-acid hover:border-acid/60 transition-all normal-case tracking-normal"
+                  >
+                    {t("fm.openSoundcloud")} ↗
+                  </a>
+                )}
+              </div>
+              {player ? (
+                <iframe
+                  key={player.url}
+                  title={`${player.title} — SoundCloud`}
+                  src={playerSrc(player)}
+                  width="100%"
+                  height="166"
+                  scrolling="no"
+                  allow="autoplay; encrypted-media"
+                  className="mt-3 border-0 bg-black"
+                />
+              ) : (
+                <p className="mt-2 text-[10px] text-fog/70 leading-relaxed">{t("fm.singlesNote")}</p>
+              )}
+            </div>
+          )}
 
           <p className="md:hidden mt-4 text-[10px] uppercase tracking-wider text-fog">
             {t("fm.next")}: {upNext.track.title} · {CHANNELS[upNext.track.style]}
