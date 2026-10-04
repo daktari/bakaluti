@@ -134,3 +134,53 @@ describe("sample keys", () => {
     expect(keys).toContain("bd:0");
   });
 });
+
+describe("performance marks", () => {
+  it("^ accents a sound or a note", () => {
+    const { lanes, warnings } = parsePattern("bd^ ~ sn ~\n0^ 3 | synth acid");
+    expect(warnings).toEqual([]);
+    const kick = lanes[0].steps[0];
+    expect(kick.kind === "hit" && kick.accent).toBe(true);
+    const root = lanes[1].steps[0];
+    expect(root.kind === "degree" && root.accent).toBe(true);
+    const third = lanes[1].steps[1];
+    expect(third.kind === "degree" && !third.accent).toBe(true);
+  });
+
+  it("_ holds the previous note and marks a slide into the next one", () => {
+    const { lanes, warnings } = parsePattern("0 _ _ 3 ~ 5 _ | synth acid");
+    expect(warnings).toEqual([]);
+    const [a, t1, t2, b, , c, t3] = lanes[0].steps;
+    expect(a.kind === "degree" && a.hold).toBe(2);
+    expect(a.kind === "degree" && a.slide).toEqual({ kind: "degree", n: 3 });
+    expect(t1.kind).toBe("rest");
+    expect(t2.kind).toBe("rest");
+    expect(b.kind === "degree" && b.hold).toBeUndefined();
+    expect(b.kind === "degree" && b.slide).toBeUndefined();
+    expect(c.kind === "degree" && c.hold).toBe(1);
+    expect(c.kind === "degree" && c.slide).toBeUndefined(); // nothing follows
+    expect(t3.kind).toBe("rest");
+    expect(lanes[0].steps).toHaveLength(7);
+  });
+
+  it("ties inside a group stay inside the group, and a lone _ is just a rest", () => {
+    const { lanes, warnings } = parsePattern("[c _] e\n_ bd");
+    expect(warnings).toEqual([]);
+    const group = lanes[0].steps[0];
+    expect(group.kind === "group" && group.children[0].kind === "note" && group.children[0].hold).toBe(1);
+    expect(lanes[1].steps[0].kind).toBe("rest");
+  });
+
+  it("parses the sound-engine commands with their ranges", () => {
+    const { lanes, warnings } = parsePattern(
+      "bd ~ | sub 0.5 | rumble 0.3 | hpf 40\n0 ~ | synth acid | cutoff 500 | res 0.8 | env 0.6 | decay 0.3 | duck 0.7 | size 0.9 | pitch 3 | cut 0.2"
+    );
+    expect(warnings).toEqual([]);
+    expect(lanes[0].fx).toMatchObject({ sub: 0.5, rumble: 0.3, hpf: 40 });
+    expect(lanes[1].fx).toMatchObject({
+      cutoff: 500, res: 0.8, env: 0.6, decay: 0.3, duck: 0.7, size: 0.9, pitch: 3, cut: 0.2,
+    });
+    expect(parsePattern("0 | pitch 99 | decay 9").lanes[0].fx).toMatchObject({ pitch: 24, decay: 2 });
+    expect(parsePattern("0 | synth reese\n0 | synth sub").lanes.map((l) => l.synth)).toEqual(["reese", "sub"]);
+  });
+});
