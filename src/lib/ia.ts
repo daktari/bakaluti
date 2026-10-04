@@ -15,6 +15,34 @@ function isAllRests(line: string): boolean {
   return tokens.length > 0 && tokens.every((token) => token.startsWith("~"));
 }
 
+const parsesClean = (line: string) => {
+  const { lanes, warnings } = parsePattern(line);
+  return lanes.length > 0 && warnings.length === 0;
+};
+
+/**
+ * Models label their lines the way the spec's recipes once did — "bajo
+ * sincopado 0 ~ [~ 0] …", "pianito ~ <7 9> …", "hats hh hh hh hh" — and
+ * the label words parse as unknown sounds. Peel up to three leading words
+ * off the pattern part until what's left parses clean; the label survives
+ * as the line's comment. Returns null when nothing playable remains.
+ */
+export function repairLine(line: string): string | null {
+  if (parsesClean(line)) return line;
+  const pipe = line.indexOf("|");
+  const body = pipe >= 0 ? line.slice(0, pipe) : line;
+  const rest = pipe >= 0 ? line.slice(pipe) : "";
+  const words = body.trim().split(/\s+/);
+  for (let drop = 1; drop <= Math.min(3, words.length - 1); drop++) {
+    const candidate = `${words.slice(drop).join(" ")} ${rest}`.trim();
+    if (parsesClean(candidate)) {
+      const label = words.slice(0, drop).join(" ");
+      return candidate.includes("--") ? candidate : `${candidate} -- ${label}`;
+    }
+  }
+  return null;
+}
+
 /** Strip markdown fences, prose and silent lanes: keep what the parser
  *  accepts AND actually sounds. */
 export function sanitizeIaCode(raw: string): string {
@@ -22,13 +50,17 @@ export function sanitizeIaCode(raw: string): string {
   const fence = raw.match(/```(?:\w*\n)?([\s\S]*?)(?:```|$)/);
   if (fence) text = fence[1];
   const lines = text.split("\n").map((line) => line.trimEnd());
-  const kept = lines.filter((line) => {
+  const kept: string[] = [];
+  for (const line of lines) {
     const trimmed = line.trim();
-    if (trimmed === "" || trimmed.startsWith("--")) return true;
-    if (isAllRests(trimmed)) return false;
-    const { lanes, warnings } = parsePattern(line);
-    return lanes.length > 0 && warnings.length === 0;
-  });
+    if (trimmed === "" || trimmed.startsWith("--")) {
+      kept.push(line);
+      continue;
+    }
+    if (isAllRests(trimmed)) continue;
+    const repaired = repairLine(line);
+    if (repaired !== null) kept.push(repaired);
+  }
   return kept.join("\n").replace(/\n{3,}/g, "\n\n").trim();
 }
 
