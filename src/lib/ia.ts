@@ -90,8 +90,10 @@ export const IA_DAILY_LIMIT = 10;
 // counter — rotating it grants amnesty to every affected browser
 const QUOTA_KEY = "bakaluti.ia.v2";
 
+/** Local calendar day — the booth reopens at the visitor's midnight, not UTC's. */
 function today(): string {
-  return new Date().toISOString().slice(0, 10);
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
 export function iaUsesLeft(): number {
@@ -153,6 +155,31 @@ function localRequest(prompt: string, code?: string, fix?: FixPayload, model = "
 }
 
 /**
+ * One SSE payload → its text delta, or null when it carries none.
+ * Workers AI shape ({response}) or OpenAI shape (choices[].delta).
+ *
+ * Workers AI serialises a token that happens to be a bare digit as a JSON
+ * NUMBER (`"response":0`, not `"0"`), so a string-only check silently drops
+ * every number the model writes — bpm, kit 909, gain 0.9, scale degrees —
+ * and the pattern arrives as `-- bpm` / `kit  | drive .`. Numbers are text.
+ */
+export function sseDelta(payload: string): string | null {
+  try {
+    const parsed = JSON.parse(payload) as {
+      response?: unknown;
+      choices?: { delta?: { content?: unknown } }[];
+    };
+    const delta = parsed.response ?? parsed.choices?.[0]?.delta?.content;
+    if (typeof delta === "string") return delta;
+    if (typeof delta === "number") return String(delta);
+    return null;
+  } catch {
+    // partial JSON in a torn chunk — ignored, the buffer catches up
+    return null;
+  }
+}
+
+/**
  * POST to the worker (production) or a local LM Studio (dev) and hand each
  * accumulated text snapshot to `onText`. Throws "cerrado" when the free
  * daily allocation ran out (503).
@@ -177,7 +204,13 @@ export async function streamGeneration(
         body: JSON.stringify({ prompt, code: options.code, fix: options.fix }),
         signal: options.signal,
       });
-  if (res.status === 503) throw new Error("cerrado");
+  if (res.status === 503) {
+    // the worker says WHY it closed (quota, deprecated model, missing
+    // binding…) — surface it in the console so an outage is diagnosable
+    const detail = await res.text().catch(() => "");
+    console.warn("residente: 503", detail);
+    throw new Error("cerrado");
+  }
   if (!res.ok || !res.body) throw new Error("error");
 
   const reader = res.body.getReader();
@@ -195,19 +228,10 @@ export async function streamGeneration(
         if (!line.startsWith("data: ")) continue;
         const payload = line.slice(6).trim();
         if (payload === "[DONE]") continue;
-        try {
-          // Workers AI shape ({response}) or OpenAI shape (choices[].delta)
-          const parsed = JSON.parse(payload) as {
-            response?: string;
-            choices?: { delta?: { content?: string } }[];
-          };
-          const delta = parsed.response ?? parsed.choices?.[0]?.delta?.content;
-          if (typeof delta === "string") {
-            text += delta;
-            onText(text);
-          }
-        } catch {
-          // partial JSON in a torn chunk — ignored, the buffer catches up
+        const delta = sseDelta(payload);
+        if (delta !== null) {
+          text += delta;
+          onText(text);
         }
       }
     }

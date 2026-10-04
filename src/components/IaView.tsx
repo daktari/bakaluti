@@ -200,6 +200,8 @@ export default function IaView({ onOpen, seed, onSeedConsumed, session }: Props)
     const base = mode === "adjust" && code ? code : undefined;
     const effectiveMode = base ? mode : "new";
     modeRef.current = effectiveMode;
+    // still inside the tap: unlock audio now, playback starts from the stream
+    audioEngine.unlock();
     let consumed = 1;
     iaConsumeUse();
     setLeft(iaUsesLeft());
@@ -272,9 +274,9 @@ export default function IaView({ onOpen, seed, onSeedConsumed, session }: Props)
       );
       setPhase("done");
     } catch (err) {
+      iaRefundUses(consumed); // a failure (or leaving the tab) must not eat the wallet
       if (controller.signal.aborted) return;
       audioEngine.setCrackle(false);
-      iaRefundUses(consumed); // a failure must not eat the wallet
       setLeft(iaUsesLeft());
       setPending(null);
       setPrompt(wish); // give the request back for another try
@@ -374,7 +376,9 @@ export default function IaView({ onOpen, seed, onSeedConsumed, session }: Props)
         <h1 className="text-2xl md:text-3xl uppercase tracking-wide led mb-2">{t("ia.title")}</h1>
         <p className="text-xs text-fog leading-relaxed max-w-lg mb-5">{t("ia.sub")}</p>
 
-        <div className="flex gap-2">
+        {/* On a phone the buttons wrap under the input instead of squeezing
+            it to a few pixels (basis-full keeps the input on its own row). */}
+        <div className="flex flex-wrap gap-2">
           <input
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
@@ -382,8 +386,11 @@ export default function IaView({ onOpen, seed, onSeedConsumed, session }: Props)
               if (e.key === "Enter") void generate(code ? "adjust" : "new");
             }}
             maxLength={280}
+            enterKeyHint="send"
+            autoCapitalize="off"
+            autoCorrect="off"
             placeholder={code ? t("ia.adjustPlaceholder") : t("ia.placeholder")}
-            className="flex-1 min-w-0 px-3 py-2.5 text-sm bg-black border border-acid/40 outline-none text-acid placeholder-fog focus:border-acid transition-all"
+            className="basis-full sm:basis-0 flex-1 min-w-0 px-3 py-2.5 text-sm bg-black border border-acid/40 outline-none text-acid placeholder-fog focus:border-acid transition-all"
           />
           {SpeechRecognitionCtor && (
             <button
