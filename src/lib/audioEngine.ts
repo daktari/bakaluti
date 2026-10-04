@@ -3,6 +3,7 @@ import {
   collectSampleKeys,
   DEFAULT_FX,
   degreeToMidi,
+  parsePattern,
   SCALES,
   type LaneDef,
   type LaneFx,
@@ -12,6 +13,7 @@ import {
   type SynthName,
 } from "./parser";
 import { kitSampleId } from "./sounds";
+import { arrangementPlan, type Section } from "./arrange";
 import { sampleBank } from "./sampleBank";
 import { voiceBank } from "./voiceBank";
 
@@ -142,13 +144,15 @@ function driveCurve(amount: number): Float32Array {
 }
 
 /** Gentle tape-style saturation for the master: barely audible at normal
- *  levels, rounds the peaks when the mix pushes. */
+ *  levels, rounds the peaks when the mix pushes. Ceiling at -0.5 dBFS so
+ *  the MP3 transcode on the other side has room for intersample peaks. */
 function tapeCurve(): Float32Array {
   const curve = new Float32Array(2048);
   const k = 1.6;
+  const ceiling = 0.944;
   for (let i = 0; i < curve.length; i++) {
     const x = (i / (curve.length - 1)) * 2 - 1;
-    curve[i] = Math.tanh(x * k) / Math.tanh(k);
+    curve[i] = (ceiling * Math.tanh(x * k)) / Math.tanh(k);
   }
   return curve;
 }
@@ -156,9 +160,9 @@ function tapeCurve(): Float32Array {
 /** Gentle master compressor — keeps stacked lanes from clipping. */
 function makeCompressor(ctx: BaseAudioContext): DynamicsCompressorNode {
   const comp = ctx.createDynamicsCompressor();
-  comp.threshold.value = -14;
-  comp.knee.value = 20;
-  comp.ratio.value = 4;
+  comp.threshold.value = -10;
+  comp.knee.value = 12;
+  comp.ratio.value = 2.5;
   comp.attack.value = 0.003;
   comp.release.value = 0.25;
   return comp;
@@ -167,7 +171,7 @@ function makeCompressor(ctx: BaseAudioContext): DynamicsCompressorNode {
 /** Brickwall-ish limiter: the last thing before the speakers. */
 function makeLimiter(ctx: BaseAudioContext): DynamicsCompressorNode {
   const lim = ctx.createDynamicsCompressor();
-  lim.threshold.value = -1.5;
+  lim.threshold.value = -3;
   lim.knee.value = 0;
   lim.ratio.value = 20;
   lim.attack.value = 0.001;
@@ -175,7 +179,20 @@ function makeLimiter(ctx: BaseAudioContext): DynamicsCompressorNode {
   return lim;
 }
 
-/** master gain → sub cut → glue → tape → limiter → out */
+/**
+ * Web Audio's compressor adds an automatic make-up gain (the spec: a
+ * 0 dBFS input comes out at ~0.6 × the gain it lost through the curve),
+ * so a glue compressor at -14 dB quietly boosts everything by ~6 dB and
+ * a limiter still lets transients past its ceiling. This undoes it.
+ */
+function makeupCompensation(ctx: BaseAudioContext, comp: DynamicsCompressorNode): GainNode {
+  const fullRangeDb = comp.threshold.value * (1 - 1 / comp.ratio.value);
+  const g = ctx.createGain();
+  g.gain.value = Math.pow(10, (0.6 * fullRangeDb) / 20);
+  return g;
+}
+
+/** master gain → sub cut → glue → limiter → tape (the hard ceiling) → out */
 function buildMaster(ctx: BaseAudioContext, volume: number): GainNode {
   const master = ctx.createGain();
   master.gain.value = volume;
@@ -184,15 +201,24 @@ function buildMaster(ctx: BaseAudioContext, volume: number): GainNode {
   hpf.frequency.value = 25;
   hpf.Q.value = 0.7;
   const comp = makeCompressor(ctx);
+  const compTrim = makeupCompensation(ctx, comp);
+  compTrim.gain.value *= 0.7; // -3 dB into the limiter: loud, not squashed
+  const limiter = makeLimiter(ctx);
+  const limiterTrim = makeupCompensation(ctx, limiter);
+  // tanh with its ceiling at -0.5 dBFS: whatever the 1 ms limiter attack
+  // lets through is rounded off here instead of clipping in the DAC or
+  // the WAV. No oversampling on purpose — its resampling filter rings
+  // past the ceiling exactly on the peaks it is meant to catch.
   const tape = ctx.createWaveShaper();
   tape.curve = tapeCurve();
-  tape.oversample = "2x";
-  const limiter = makeLimiter(ctx);
+  tape.oversample = "none";
   master.connect(hpf);
   hpf.connect(comp);
-  comp.connect(tape);
-  tape.connect(limiter);
-  limiter.connect(ctx.destination);
+  comp.connect(compTrim);
+  compTrim.connect(limiter);
+  limiter.connect(limiterTrim);
+  limiterTrim.connect(tape);
+  tape.connect(ctx.destination);
   return master;
 }
 
@@ -656,13 +682,74 @@ class AudioEngine {
   /** Render `baseSteps` base steps (default 4 loops of the 8-step grid). */
   async renderWav(lanes: LaneDef[], baseSteps = 32): Promise<Blob> {
     await this.preload(lanes);
+    return encodeWav(await this.renderSegment(lanes, baseSteps, this.bpm, 1.5));
+  }
+
+  /**
+   * A standalone recording of a radio track: its arrangement states laid
+   * out as intro → body → full → outro over `seconds`, each section
+   * rendered offline and overlap-added so delay and reverb tails ring
+   * across the seams, then a fade-out. Max 5 minutes (memory).
+   */
+  async renderTrack(
+    track: { states: string[]; bpm: number },
+    seconds: number,
+    onProgress?: (done: number, total: number) => void
+  ): Promise<Blob> {
+    const plan = arrangementPlan(track.states, Math.min(300, Math.max(30, seconds)), track.bpm);
+    const sections = plan.map((s: Section) => ({ ...s, lanes: parsePattern(s.code).lanes }));
+    for (const s of sections) await this.preload(s.lanes);
 
     const rate = 44100;
-    const body = baseSteps * this.stepSeconds;
-    const octx = new OfflineAudioContext(2, Math.ceil(rate * (body + 1.5)), rate);
+    const tail = 2.5;
+    const barSeconds = (60 / track.bpm) * 4;
+    const total = sections.reduce((sum, s) => sum + s.bars, 0) * barSeconds + tail;
+    const frames = Math.ceil(total * rate);
+    const out = [new Float32Array(frames), new Float32Array(frames)];
+
+    let offset = 0;
+    for (let i = 0; i < sections.length; i++) {
+      const s = sections[i];
+      onProgress?.(i, sections.length);
+      const buffer = await this.renderSegment(s.lanes, s.bars * 8, track.bpm, tail);
+      const start = Math.round(offset * rate);
+      for (let c = 0; c < 2; c++) {
+        const src = buffer.getChannelData(c);
+        const dst = out[c];
+        for (let k = 0; k < src.length && start + k < frames; k++) dst[start + k] += src[k];
+      }
+      offset += s.bars * barSeconds;
+    }
+    onProgress?.(sections.length, sections.length);
+
+    // fade the last 4 seconds, then a hard floor so nothing clips
+    const fadeFrames = Math.min(frames, Math.round(4 * rate));
+    for (let c = 0; c < 2; c++) {
+      const d = out[c];
+      for (let k = 0; k < fadeFrames; k++) {
+        d[frames - 1 - k] *= k / fadeFrames;
+      }
+    }
+    const mixed = new OfflineAudioContext(2, frames, rate).createBuffer(2, frames, rate);
+    mixed.copyToChannel(out[0], 0);
+    mixed.copyToChannel(out[1], 1);
+    return encodeWav(mixed);
+  }
+
+  /** Render lanes for `baseSteps` steps at `bpm` plus `tail` seconds. */
+  private async renderSegment(
+    lanes: LaneDef[],
+    baseSteps: number,
+    bpm: number,
+    tail: number
+  ): Promise<AudioBuffer> {
+    const rate = 44100;
+    const stepSeconds = 60 / bpm / 2;
+    const body = baseSteps * stepSeconds;
+    const octx = new OfflineAudioContext(2, Math.ceil(rate * (body + tail)), rate);
     if (await this.loadLadder(octx)) this.ladderReady.add(octx);
     const master = buildMaster(octx, this.volume);
-    const chains = createChains(octx, master, lanes, this.laneGains, this.delaySeconds);
+    const chains = createChains(octx, master, lanes, this.laneGains, (60 / bpm) * 0.75);
     const kicks: number[] = [];
 
     lanes.forEach((lane, i) => {
@@ -675,7 +762,7 @@ class AudioEngine {
         flash: null,
         kicks,
       };
-      const duration = this.stepSeconds / lane.speed;
+      const duration = stepSeconds / lane.speed;
       const length = lane.steps.length;
       let time = 0.03;
       let index = 0;
@@ -691,9 +778,9 @@ class AudioEngine {
         index += 1;
       }
     });
-    this.applyDucks(chains, lanes, kicks);
+    this.applyDucks(chains, lanes, kicks, stepSeconds);
 
-    return encodeWav(await octx.startRendering());
+    return octx.startRendering();
   }
 
   // ------------------------------------------------------------ scheduling
@@ -743,16 +830,16 @@ class AudioEngine {
     });
 
     // every kick of the window is known now: dip the ducked lanes
-    this.applyDucks(this.chains, this.lanes, this.liveKicks);
+    this.applyDucks(this.chains, this.lanes, this.liveKicks, this.stepSeconds);
     this.liveKicks = [];
   }
 
   /** The sidechain: on every kick, ducked lanes drop and recover; the
    *  rumble bus ducks against its own kick so the sub stays clean. */
-  private applyDucks(chains: Chain[], lanes: LaneDef[], kicks: number[]) {
+  private applyDucks(chains: Chain[], lanes: LaneDef[], kicks: number[], stepSeconds: number) {
     if (kicks.length === 0) return;
     const times = [...new Set(kicks)].sort((a, b) => a - b);
-    const release = Math.max(0.06, this.stepSeconds * 0.9);
+    const release = Math.max(0.06, stepSeconds * 0.9);
     chains.forEach((chain, i) => {
       const lane = lanes[i];
       const depth = lane?.fx.duck ?? 0;

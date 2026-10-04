@@ -5,6 +5,8 @@ import { audioEngine } from "../lib/audioEngine";
 const CodeEditor = lazy(() => import("./CodeEditor"));
 import { radioAt, CHANNELS, SLOT_SECONDS, ID_SECONDS, type Dial, type OnAir } from "../lib/radio";
 import { momentUrl, type SharedMoment } from "../lib/share";
+import { downloadBlob, slug } from "../lib/download";
+import { coverPng } from "../lib/cover";
 import Visualizer from "./Visualizer";
 import { getLang, t } from "../lib/i18n";
 
@@ -35,6 +37,8 @@ export default function FmView({ onRemix, onIaRemix, moment, onClearMoment }: Pr
   /** seconds between the listened broadcast and the wall clock (0 = live) */
   const [offset, setOffset] = useState(() => (moment ? moment.t - nowSeconds() : 0));
   const [notice, setNotice] = useState<string | null>(null);
+  const [recMinutes, setRecMinutes] = useState(4);
+  const [recording, setRecording] = useState<string | null>(null);
   const [air, setAir] = useState<OnAir>(() =>
     radioAt(moment?.dial ?? "fm", moment ? moment.t : nowSeconds())
   );
@@ -116,6 +120,36 @@ export default function FmView({ onRemix, onIaRemix, moment, onClearMoment }: Pr
     await navigator.clipboard.writeText(momentUrl(dial, nowSeconds() + offset));
     setNotice(t("fm.momentCopied"));
     window.setTimeout(() => setNotice(null), 2200);
+  };
+
+  /** A standalone recording of the track on air: arrangement + fade. */
+  const recordTrack = async () => {
+    if (recording) return;
+    const track = air.track;
+    setRecording("0%");
+    try {
+      const blob = await audioEngine.renderTrack(track, recMinutes * 60, (done, total) =>
+        setRecording(`${Math.round((done / total) * 100)}%`)
+      );
+      downloadBlob(`bakaluti-${slug(track.title)}.wav`, blob);
+      setNotice(t("fm.recorded"));
+    } catch {
+      setNotice(t("fm.recordError"));
+    } finally {
+      setRecording(null);
+      window.setTimeout(() => setNotice(null), 3000);
+    }
+  };
+
+  const makeCover = async () => {
+    const track = air.track;
+    const blob = await coverPng({
+      title: track.title,
+      channel: CHANNELS[track.style],
+      bpm: track.bpm,
+      code: track.code,
+    });
+    downloadBlob(`bakaluti-${slug(track.title)}.png`, blob);
   };
 
   // preview past the next slot's ID window, so it names the actual track
@@ -327,6 +361,44 @@ export default function FmView({ onRemix, onIaRemix, moment, onClearMoment }: Pr
             )}
           </div>
           {notice && <p className="mt-2 text-[10px] text-acid">{notice}</p>}
+
+          {/* the recording desk: a standalone WAV of the track on air */}
+          {!air.isStationId && (
+            <div className="flex items-center gap-2 flex-wrap mt-3 text-[10px] uppercase tracking-widest">
+              <button
+                onClick={() => void recordTrack()}
+                disabled={recording !== null}
+                className="px-4 py-2 border border-red-500/50 text-red-400 hover:bg-red-500 hover:text-black transition-all disabled:opacity-60"
+              >
+                {recording ? (
+                  <span className="blink">● {t("fm.recording", { p: recording })}</span>
+                ) : (
+                  <span>
+                    <span className="text-red-500">●</span> {t("fm.record")}
+                  </span>
+                )}
+              </button>
+              <select
+                value={recMinutes}
+                onChange={(e) => setRecMinutes(Number(e.target.value))}
+                aria-label={t("fm.recordLength")}
+                className="px-1 py-2 bg-black border border-white/15 text-fog outline-none"
+              >
+                {[3, 4, 5].map((n) => (
+                  <option key={n} value={n}>
+                    {n} min
+                  </option>
+                ))}
+              </select>
+              <button
+                onClick={() => void makeCover()}
+                className="px-3 py-2 border border-white/15 text-fog hover:text-acid hover:border-acid/60 transition-all"
+              >
+                {t("fm.cover")}
+              </button>
+              <span className="text-fog/60 normal-case tracking-normal">{t("fm.recordNote")}</span>
+            </div>
+          )}
 
           <p className="md:hidden mt-4 text-[10px] uppercase tracking-wider text-fog">
             {t("fm.next")}: {upNext.track.title} · {CHANNELS[upNext.track.style]}
