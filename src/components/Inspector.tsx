@@ -96,6 +96,8 @@ export default function Inspector({
           <Row code="<bd sn>" color="text-mag" text={t("insp.trickAlt")} />
           <Row code="bd(3,8)" color="text-warn" text={t("insp.trickEuclid")} />
           <Row code="hh?" color="text-white/80" text={t("insp.trickProb")} />
+          <Row code="bd^ 0^" color="text-acid" text={t("insp.trickAccent")} />
+          <Row code="0 _ 3" color="text-acid" text={t("insp.trickTie")} />
         </div>
       </section>
 
@@ -106,6 +108,9 @@ export default function Inspector({
           <Row code="c5 c#" color="text-ice" text={t("insp.melOct")} />
           <Row code="0 2 4 7" color="text-ice" text={t("insp.melDegrees")} />
           <Row code="| synth bass" color="text-mag" text={t("insp.melSynth")} />
+          <Row code="| cutoff 500" color="text-mag" text={t("insp.cutoff")} />
+          <Row code="| env 0.6" color="text-mag" text={t("insp.env")} />
+          <Row code="| decay 0.3" color="text-mag" text={t("insp.decay")} />
           <Row code="| scale menor" color="text-mag" text={t("insp.melScale")} />
         </div>
       </section>
@@ -124,9 +129,17 @@ export default function Inspector({
           <Row code="| every 4 rev" color="text-mag" text={t("insp.every")} />
           <Row code="| swing 0.3" color="text-acid" text={t("insp.swing")} />
           <Row code="| lpf 800" color="text-warn" text={t("insp.lpf")} />
+          <Row code="| hpf 200" color="text-warn" text={t("insp.hpf")} />
+          <Row code="| res 0.5" color="text-warn" text={t("insp.res")} />
           <Row code="| delay 0.3" color="text-warn" text={t("insp.delay")} />
           <Row code="| reverb 0.4" color="text-warn" text={t("insp.reverb")} />
+          <Row code="| size 0.8" color="text-warn" text={t("insp.size")} />
           <Row code="| drive 0.5" color="text-warn" text={t("insp.drive")} />
+          <Row code="| duck 0.6" color="text-warn" text={t("insp.duck")} />
+          <Row code="| sub 0.5" color="text-warn" text={t("insp.sub")} />
+          <Row code="| rumble 0.4" color="text-warn" text={t("insp.rumble")} />
+          <Row code="| pitch -3" color="text-warn" text={t("insp.pitch")} />
+          <Row code="| cut 0.1" color="text-warn" text={t("insp.cut")} />
           <Row code="| pan -1" color="text-warn" text={t("insp.pan")} />
           <Row code="| gain 0.5" color="text-warn" text={t("insp.gain")} />
         </div>
