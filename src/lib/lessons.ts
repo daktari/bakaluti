@@ -238,7 +238,7 @@ const ES: LessonText[] = [
       "Una pista suele tener: un bombo que ancla, algo que responde (caja o palmada), brillo arriba (hats), un bajo por debajo y un adorno que sorprende.",
       "Y un secreto más: en el Editor está `⟳ AUTO` — la app muta tu ritmo sola cada pocas vueltas. Fija con ▣ las líneas que quieras proteger y deja evolucionar el resto. Jardinería musical. 🌱",
     ],
-    example: "bd bd bd bd | kit 909\n~ cp ~ cp | kit 909",
+    example: "bd ~ bd ~ | kit 909\n~ ~ cp ~ | kit 909",
     task: "Monta una pista con al menos 3 líneas, un `| kit` y un `| synth`. Luego ve al Editor, guárdala y suelta el AUTO.",
     success:
       "🎓 Curso completado. Ritmo, capas, euclidianos, efectos, máquinas legendarias, groove, tu voz… Ya haces live coding. El Editor es tuyo: monta algo, guárdalo, compártelo. 🚀",
@@ -436,7 +436,7 @@ const EN: LessonText[] = [
       "A track usually has: a kick that anchors, something that answers (snare or clap), shimmer on top (hats), a bass underneath and one surprise.",
       "One more secret: in the Editor there's `⟳ AUTO` — the app mutates your beat on its own every few loops. Lock the lines you want to protect with ▣ and let the rest evolve. Musical gardening. 🌱",
     ],
-    example: "bd bd bd bd | kit 909\n~ cp ~ cp | kit 909",
+    example: "bd ~ bd ~ | kit 909\n~ ~ cp ~ | kit 909",
     task: "Build a track with at least 3 lines, one `| kit` and one `| synth`. Then go to the Editor, save it and unleash AUTO.",
     success:
       "🎓 Course complete. Beats, layers, euclideans, effects, legendary machines, groove, your own voice… You're live coding now. The Editor is yours: build something, save it, share it. 🚀",
@@ -500,9 +500,9 @@ const EXTRAS_ES: Extra[] = [
       "1 · El bombo manda: dale `gain 0.9` y pon todo lo demás por debajo — si todo grita, nada se oye.",
       "2 · Reparte el espacio: `pan` negativo a la izquierda, positivo a la derecha.",
       "3 · La `reverb` va en palmadas y cajas. En el bombo, nunca — lo vuelve barro.",
-      { code: "bd bd bd bd | kit 909 | gain 0.9\n~ cp ~ cp | kit 909 | reverb 0.35 | gain 0.5\nhh hh hh hh | fast 2 | gain 0.3 | pan -0.3\ncb(2,8) | gain 0.3 | pan 0.4" },
+      { code: "bd ~ bd ~ | kit 909 | gain 0.9\n~ ~ cp ~ | kit 909 | reverb 0.35 | gain 0.5\nhh hh hh hh | fast 2 | gain 0.3 | pan -0.3\ncb(2,8) | gain 0.3 | pan 0.4" },
     ],
-    example: "bd bd bd bd | kit 909 | gain 0.9\n~ cp ~ cp | kit 909 | reverb 0.35 | gain 0.5\nhh hh hh hh | fast 2 | gain 0.3 | pan -0.3",
+    example: "bd ~ bd ~ | kit 909 | gain 0.9\n~ ~ cp ~ | kit 909 | reverb 0.35 | gain 0.5\nhh hh hh hh | fast 2 | gain 0.3 | pan -0.3",
   },
   {
     id: "receta-melodia",
@@ -527,7 +527,7 @@ const EXTRAS_ES: Extra[] = [
       { code: "<0 5> ~ ~ ~ | synth pad | scale menor | slow 2 | reverb 0.5\n<2 7> ~ ~ ~ | synth pad | scale menor | slow 2 | reverb 0.5 | gain 0.7" },
       "La primera línea pone la base, la segunda la armonía dos peldaños más arriba. Cambia los pares — `<0 3>`, `<2 5>` — y el acorde viaja. Así se hacen los strings del techno de Detroit.",
     ],
-    example: "<0 5> ~ ~ ~ | synth pad | scale menor | slow 2 | reverb 0.5\n<2 7> ~ ~ ~ | synth pad | scale menor | slow 2 | reverb 0.5 | gain 0.7\nbd bd bd bd | kit 909 | gain 0.8",
+    example: "<0 5> ~ ~ ~ | synth pad | scale menor | slow 2 | reverb 0.5\n<2 7> ~ ~ ~ | synth pad | scale menor | slow 2 | reverb 0.5 | gain 0.7\nbd ~ bd ~ | kit 909 | gain 0.8",
   },
   {
     id: "fondo-persiguen",
@@ -595,9 +595,9 @@ const EXTRAS_EN: Extra[] = [
       "1 · The kick rules: give it `gain 0.9` and keep everything else below — when everything shouts, nothing is heard.",
       "2 · Share the space: negative `pan` goes left, positive right.",
       "3 · `reverb` belongs on claps and snares. Never on the kick — it turns to mud.",
-      { code: "bd bd bd bd | kit 909 | gain 0.9\n~ cp ~ cp | kit 909 | reverb 0.35 | gain 0.5\nhh hh hh hh | fast 2 | gain 0.3 | pan -0.3\ncb(2,8) | gain 0.3 | pan 0.4" },
+      { code: "bd ~ bd ~ | kit 909 | gain 0.9\n~ ~ cp ~ | kit 909 | reverb 0.35 | gain 0.5\nhh hh hh hh | fast 2 | gain 0.3 | pan -0.3\ncb(2,8) | gain 0.3 | pan 0.4" },
     ],
-    example: "bd bd bd bd | kit 909 | gain 0.9\n~ cp ~ cp | kit 909 | reverb 0.35 | gain 0.5\nhh hh hh hh | fast 2 | gain 0.3 | pan -0.3",
+    example: "bd ~ bd ~ | kit 909 | gain 0.9\n~ ~ cp ~ | kit 909 | reverb 0.35 | gain 0.5\nhh hh hh hh | fast 2 | gain 0.3 | pan -0.3",
   },
   {
     id: "receta-melodia",
@@ -622,7 +622,7 @@ const EXTRAS_EN: Extra[] = [
       { code: "<0 5> ~ ~ ~ | synth pad | scale menor | slow 2 | reverb 0.5\n<2 7> ~ ~ ~ | synth pad | scale menor | slow 2 | reverb 0.5 | gain 0.7" },
       "The first line lays the base, the second the harmony two degrees up. Change the pairs — `<0 3>`, `<2 5>` — and the chord travels. That's how Detroit techno strings are made.",
     ],
-    example: "<0 5> ~ ~ ~ | synth pad | scale menor | slow 2 | reverb 0.5\n<2 7> ~ ~ ~ | synth pad | scale menor | slow 2 | reverb 0.5 | gain 0.7\nbd bd bd bd | kit 909 | gain 0.8",
+    example: "<0 5> ~ ~ ~ | synth pad | scale menor | slow 2 | reverb 0.5\n<2 7> ~ ~ ~ | synth pad | scale menor | slow 2 | reverb 0.5 | gain 0.7\nbd ~ bd ~ | kit 909 | gain 0.8",
   },
   {
     id: "fondo-persiguen",

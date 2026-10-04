@@ -98,8 +98,8 @@ https://bakaluti.com/#p=<base64url(utf8 pattern)>&b=<bpm>
 ## Complete example
 
 -- detroit-style techno, ~124 BPM
-bd bd bd bd | kit 909 | gain 0.9            -- kick
-~ cp ~ cp | kit 909 | reverb 0.3 | gain 0.5 -- clap on 2 and 4
+bd ~ bd ~ | kit 909 | gain 0.9              -- kick on every beat
+~ ~ cp ~ | kit 909 | reverb 0.3 | gain 0.5 -- clap on 2 and 4
 ~ ho ~ ho | kit 909 | gain 0.4              -- offbeat open hat
 0 ~ [~ 0] ~ 3 ~ [~ 5] ~ | synth bass | scale menor | swing 0.15 | gain 0.7
 <0 5> ~ ~ ~ | synth pad | scale menor | slow 2 | reverb 0.55 | gain 0.55

@@ -93,15 +93,15 @@ function motor(rng: Rng): Sketch {
   // kick: constant, sometimes with an alternating double-hit fill
   lanes.push({
     tier: 1,
-    line: `bd${chance(rng, 0.4) ? `:${rint(rng, 0, 3)}` : ""} bd bd ${chance(rng, 0.25) ? "<bd [bd bd]>" : "bd"} | kit 909 | gain 0.9 -- bombo constante`,
+    line: `bd${chance(rng, 0.4) ? `:${rint(rng, 0, 3)}` : ""} ~ bd ~ bd ~ ${chance(rng, 0.25) ? "<bd [bd bd]>" : "bd"} ~ | kit 909 | gain 0.9 -- bombo constante`,
   });
 
   // backbeat FAMILY — the clap used to be a byte-for-byte clone across tracks
   const backbeat = pick(rng, [
-    "~ cp ~ cp",
-    "~ cp ~ [cp cp?]",
-    "~ sn ~ sn",
-    "~ cp ~ <cp [cp cp]>",
+    "~ ~ cp ~",
+    "~ ~ cp ~ ~ ~ [cp cp?] ~",
+    "~ ~ sn ~",
+    "~ ~ cp ~ ~ ~ <cp [cp cp]> ~",
   ]);
   lanes.push({
     tier: 1,
@@ -232,9 +232,9 @@ function motor(rng: Rng): Sketch {
 //
 // The grid: one step is an EIGHTH note (8 steps = one 4/4 bar at the shown
 // tempo — the lessons, the gallery and the step grid all agree). So the
-// four-on-the-floor is `bd ~ bd ~ bd ~ bd ~`, offbeat hats `~ hh ~ hh …`,
-// sixteenths are eight hats with `fast 2`. (The other dance grammars still
-// write `bd bd bd bd`, a kick per eighth — twice the tempo they announce.)
+// four-on-the-floor is `bd ~ bd ~ bd ~ bd ~` (or `bd ~ bd ~`, looping),
+// the backbeat `~ ~ cp ~`, offbeat hats `~ hh ~ hh …`, sixteenths are
+// `hh hh hh hh | fast 2`. Every grammar and anchor is written on it.
 //
 // Seven archetypes, each distilled from one UK/industrial lineage (kitchen
 // notes in PLAN-FM.md): the Birmingham roller, the Downwards dub slab, the
@@ -593,14 +593,14 @@ function casa(rng: Rng): Sketch {
 
   lanes.push({
     tier: 1,
-    line: `bd${chance(rng, 0.3) ? `:${rint(rng, 0, 3)}` : ""} bd bd ${chance(rng, 0.2) ? "<bd [bd bd]>" : "bd"} | kit ${kit} | gain 0.9 -- bombo constante`,
+    line: `bd${chance(rng, 0.3) ? `:${rint(rng, 0, 3)}` : ""} ~ bd ~ bd ~ ${chance(rng, 0.2) ? "<bd [bd bd]>" : "bd"} ~ | kit ${kit} | gain 0.9 -- bombo constante`,
   });
   const hoPat = pick(rng, ["~ ho ~ ho", "~ [~ ho] ~ ho", "~ ho ~ ho?"]);
   lanes.push({
     tier: 1,
     line: `${hoPat} | kit ${kit} | swing ${groove} | gain ${rnum(rng, 0.36, 0.45)} -- hat abierto a contratiempo`,
   });
-  const clap = pick(rng, ["~ cp ~ cp", "~ cp ~ [cp cp?]", "~ cp ~ <cp [cp cp]>"]);
+  const clap = pick(rng, ["~ ~ cp ~", "~ ~ cp ~ ~ ~ [cp cp?] ~", "~ ~ cp ~ ~ ~ <cp [cp cp]> ~"]);
   lanes.push({
     tier: 2,
     line: `${clap} | kit ${kit} | swing ${groove} | reverb ${rnum(rng, 0.25, 0.35)} | gain 0.5 -- palmada`,
