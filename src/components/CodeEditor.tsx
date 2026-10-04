@@ -126,7 +126,11 @@ const OPTIONS = [
   ...SOUNDS.map((s) => ({ label: s.id, type: "keyword", detail: pick(s.name) })),
   ...COMMANDS.map((c) => ({ label: c, type: "function", detail: t("ac.trick") })),
   ...SYNTH_NAMES.map((s) => ({ label: s, type: "variable", detail: t("ac.synth") })),
-  ...["mayor", "menor", "penta"].map((s) => ({ label: s, type: "variable", detail: t("ac.scale") })),
+  ...["mayor", "menor", "penta", "dorica", "frigia", "lidia"].map((s) => ({
+    label: s,
+    type: "variable",
+    detail: t("ac.scale"),
+  })),
   ...Object.keys(KITS).map((k) => ({
     label: k,
     type: "variable",

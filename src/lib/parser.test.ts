@@ -107,6 +107,19 @@ describe("melody", () => {
     expect(degreeToMidi(3, SCALES.menor)).toBe(65);
   });
 
+  it("knows the three modes, in Spanish and in Strudel's English", () => {
+    // frigia: flat second — the dark clash; lidia: raised fourth — floating
+    expect(degreeToMidi(1, SCALES.frigia)).toBe(61);
+    expect(degreeToMidi(3, SCALES.lidia)).toBe(66);
+    expect(degreeToMidi(5, SCALES.dorica)).toBe(69);
+    expect(SCALES.dorian).toEqual(SCALES.dorica);
+    expect(SCALES.phrygian).toEqual(SCALES.frigia);
+    expect(SCALES.lydian).toEqual(SCALES.lidia);
+    const { lanes, warnings } = parsePattern("0 1 | synth pad | scale frigia");
+    expect(warnings).toEqual([]);
+    expect(lanes[0].scale).toEqual(SCALES.frigia);
+  });
+
   it("collects piano midis only from piano lanes", () => {
     const { lanes } = parsePattern("0 2 | synth piano | scale menor\n0 2 | synth bass");
     expect(collectPianoMidis(lanes).sort()).toEqual([60, 63]);

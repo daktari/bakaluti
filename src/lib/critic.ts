@@ -31,18 +31,23 @@ interface StyleRules {
 
 const RULES: Record<StyleName, StyleRules> = {
   motor: { bpm: [122, 128], lanes: [7, 9], kickAnchors: true, maxSwing: 0.4 },
+  // bpm spans the lineages (Sandwell 124 → Axis 148); swing only for the
+  // swung-metal archetype (one shared value, the judge rule); delay and
+  // reverb capped low — Basic Channel's whip on ONE percussion, never a wash
   oxido: {
-    bpm: [135, 142],
+    bpm: [120, 148],
     lanes: [5, 8],
     kickAnchors: true,
-    maxSwing: 0,
+    maxSwing: 0.4,
     minDrivenLanes: 3,
-    maxReverb: 0.2,
-    maxDelay: 0,
+    maxReverb: 0.3,
+    maxDelay: 0.25,
   },
   casa: { bpm: [122, 126], lanes: [5, 7], kickAnchors: true, maxSwing: 0.5, requiresSwing: true },
+  // 60-75 is the slow clock; the buried-kick, dub and sequence archetypes
+  // run a real pulse at 100-126 (pop-ambient, the healer's room, kosmische)
   niebla: {
-    bpm: [60, 75],
+    bpm: [60, 126],
     lanes: [2, 6],
     kickAnchors: false,
     maxSwing: 0.3,

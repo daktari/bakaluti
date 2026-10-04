@@ -22,14 +22,24 @@ export type SynthName = "piano" | "bass" | "pad" | "acid";
 
 export const SYNTH_NAMES: SynthName[] = ["piano", "bass", "pad", "acid"];
 
-/** Scale intervals in semitones from the root (c4). Strudel names accepted. */
+/** Scale intervals in semitones from the root (c4). Strudel names accepted.
+ *  The three modes are the radio's colours: dórica = minor with a bright
+ *  sixth (dub, deep house), frigia = minor with a flat second (the dark,
+ *  industrial clash), lidia = major with a raised fourth (floating,
+ *  unresolved — ambient's favourite). */
 export const SCALES: Record<string, number[]> = {
   mayor: [0, 2, 4, 5, 7, 9, 11],
   menor: [0, 2, 3, 5, 7, 8, 10],
   penta: [0, 2, 4, 7, 9],
+  dorica: [0, 2, 3, 5, 7, 9, 10],
+  frigia: [0, 1, 3, 5, 7, 8, 10],
+  lidia: [0, 2, 4, 6, 7, 9, 11],
   major: [0, 2, 4, 5, 7, 9, 11],
   minor: [0, 2, 3, 5, 7, 8, 10],
   pentatonic: [0, 2, 4, 7, 9],
+  dorian: [0, 2, 3, 5, 7, 9, 10],
+  phrygian: [0, 1, 3, 5, 7, 8, 10],
+  lydian: [0, 2, 4, 6, 7, 9, 11],
 };
 
 const SEMITONES: Record<string, number> = {
