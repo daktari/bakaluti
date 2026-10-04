@@ -365,6 +365,17 @@ class AudioEngine {
     return this.ensureContext();
   }
 
+  /**
+   * Call synchronously inside a user gesture (tap, key) when playback will
+   * start LATER from a non-gesture path — e.g. the IA stream's first line.
+   * iOS only lets a context resume from a gesture; resuming here keeps it
+   * unlocked for the asynchronous start that follows.
+   */
+  unlock() {
+    const ctx = this.ensureContext();
+    if (ctx.state !== "running") void ctx.resume();
+  }
+
   /** Fetch + decode the samples a pattern needs (fire-and-forget friendly). */
   async preload(lanes: LaneDef[]): Promise<void> {
     const ctx = this.ensureContext();
@@ -424,11 +435,15 @@ class AudioEngine {
     ]);
     if (this.onStep !== onStep) return; // stopped while waiting
 
+    // updatePattern() may have swapped this.lanes while we waited (the IA
+    // tab starts with an empty pattern and streams lines in): the lane
+    // states must track the CURRENT lanes, or every lane goes silent until
+    // the next update.
     this.rebuildChainsIfNeeded(true);
     this.startTime = ctx.currentTime + 0.08;
     this.uiNextTime = this.startTime;
     this.uiStep = 0;
-    this.laneStates = lanes.map(() => ({
+    this.laneStates = this.lanes.map(() => ({
       nextTime: this.startTime,
       index: 0,
       acidFreq: null,
