@@ -114,8 +114,8 @@ export default function IaStrip({ code, bpm, playing, volume, onApply }: Props) 
       }
       setPhase("idle");
     } catch (err) {
+      iaRefundUses(consumed); // a failure (or leaving the editor) must not eat the wallet
       if (controller.signal.aborted) return;
-      iaRefundUses(consumed); // a failure must not eat the wallet
       setLeft(iaUsesLeft());
       setPhase(err instanceof Error && err.message === "cerrado" ? "closed" : "error");
     }

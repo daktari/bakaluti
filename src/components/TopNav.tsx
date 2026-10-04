@@ -17,21 +17,25 @@ export default function TopNav({ tab, onChange }: { tab: Tab; onChange: (t: Tab)
   const [about, setAbout] = useState(false);
 
   return (
-    <header className="flex items-center gap-6 px-5 h-12 border-b border-acid/25 bg-panel shrink-0">
-      <div className="text-sm tracking-widest select-none uppercase">
+    <header className="flex flex-wrap md:flex-nowrap items-center gap-x-3 gap-y-1 md:gap-6 px-3 md:px-5 py-1.5 md:py-0 md:h-12 border-b border-acid/25 bg-panel shrink-0">
+      <div className="text-sm tracking-widest select-none uppercase whitespace-nowrap shrink-0">
         <span className="text-fog">[</span>
         <span className="text-acid">baka</span>
         <span className="text-mag">luti</span>
-        <span className="text-fog"> v1.0]</span>
+        <span className="text-fog hidden md:inline"> v1.0</span>
+        <span className="text-fog">]</span>
         <span className="text-acid blink">▮</span>
       </div>
-      <nav className="flex gap-1 text-xs">
+      {/* On a phone the tabs get their own full-width row under the logo
+          (and scroll sideways if even that is short) instead of pushing the
+          last ones and the ?/lang buttons off a clipped viewport. */}
+      <nav className="flex gap-1 text-xs basis-full md:basis-auto order-last md:order-none min-w-0 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {TABS.map((id) => (
           <button
             key={id}
             onClick={() => onChange(id)}
             className={
-              "px-3 py-1.5 uppercase tracking-widest transition-colors " +
+              "shrink-0 px-2 md:px-3 py-1.5 uppercase tracking-widest transition-colors " +
               (tab === id
                 ? "bg-acid text-black font-bold"
                 : "text-fog hover:text-acid hover:bg-acid/10")
@@ -47,14 +51,14 @@ export default function TopNav({ tab, onChange }: { tab: Tab; onChange: (t: Tab)
       <button
         onClick={() => setAbout(true)}
         title={t("about.button")}
-        className="md:ml-3 ml-auto px-2 py-1 text-[10px] border border-white/15 text-fog hover:text-acid hover:border-acid/60 transition-all"
+        className="md:ml-3 ml-auto shrink-0 px-2 py-1 text-[10px] border border-white/15 text-fog hover:text-acid hover:border-acid/60 transition-all"
       >
         ?
       </button>
       <button
         onClick={toggleLang}
         title="español / english"
-        className="px-2 py-1 text-[10px] uppercase tracking-widest border border-white/15 text-fog hover:text-acid hover:border-acid/60 transition-all"
+        className="shrink-0 px-2 py-1 text-[10px] uppercase tracking-widest border border-white/15 text-fog hover:text-acid hover:border-acid/60 transition-all"
       >
         {getLang() === "es" ? "es→en" : "en→es"}
       </button>
