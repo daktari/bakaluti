@@ -18,8 +18,8 @@ export const ANCHORS: Track[] = [
     "motor",
     "Correa de distribución",
     124,
-    `bd bd bd bd | kit 909 | gain 0.9 -- bombo constante
-~ cp ~ cp | kit 909 | reverb 0.3 | gain 0.5 -- palmada
+    `bd ~ bd ~ | kit 909 | gain 0.9 -- bombo constante
+~ ~ cp ~ | kit 909 | reverb 0.3 | gain 0.5 -- palmada
 ~ ho ~ ho | kit 909 | gain 0.4 -- contratiempo
 0 ~ [~ 0] ~ 3 ~ [~ 5] ~ | synth bass | scale menor | swing 0.15 | gain 0.7 -- bajo funk
 <0 5> ~ ~ ~ | synth pad | scale menor | slow 2 | reverb 0.55 | gain 0.55 -- cuerdas: base
@@ -30,8 +30,8 @@ export const ANCHORS: Track[] = [
     "motor",
     "Cromo y humo",
     126,
-    `bd:1 bd bd bd | kit 909 | gain 0.9 -- bombo constante
-~ cp ~ cp | kit 909 | reverb 0.3 | gain 0.5 -- palmada
+    `bd:1 ~ bd ~ | kit 909 | gain 0.9 -- bombo constante
+~ ~ cp ~ | kit 909 | reverb 0.3 | gain 0.5 -- palmada
 ~ ho ~ ho | kit 909 | gain 0.42 -- contratiempo
 hh hh hh | kit 909 | gain 0.26 -- hats, 3 contra 4
 0 ~ ~ [~ 0] ~ 3 ~ <5 7> | synth bass | scale menor | swing 0.18 | gain 0.72 -- bajo funk
@@ -43,7 +43,7 @@ hh hh hh | kit 909 | gain 0.26 -- hats, 3 contra 4
     "motor",
     "Última ronda en la fábrica",
     122,
-    `bd bd bd bd | kit 909 | gain 0.9 -- bombo constante
+    `bd ~ bd ~ | kit 909 | gain 0.9 -- bombo constante
 ~ ~ cp ~ | kit 909 | reverb 0.35 | gain 0.5 -- palmada escasa
 ~ ho ~ ho | kit 909 | gain 0.38 -- contratiempo
 -2 ~ [~ -2] ~ 2 ~ [~ 3] ~ | synth bass | scale menor | swing 0.12 | gain 0.7 -- bajo grave
@@ -129,9 +129,9 @@ cb ~ ~ rm? ~ ~ cb ~ ~ ~ | swing 0.35 | drive 0.45 | pan -0.3 | gain 0.4 -- metal
     "casa",
     "Portal abierto",
     124,
-    `bd bd bd bd | kit 909 | gain 0.9 -- bombo constante
+    `bd ~ bd ~ | kit 909 | gain 0.9 -- bombo constante
 ~ ho ~ ho | kit 909 | swing 0.32 | gain 0.45 -- hat abierto a contratiempo
-~ cp ~ cp | kit 909 | reverb 0.3 | gain 0.5 -- palmada
+~ ~ cp ~ | kit 909 | reverb 0.3 | gain 0.5 -- palmada
 hh hh? hh hh | kit 909 | swing 0.32 | gain 0.34 -- hats
 0 ~ [~ 4] ~ 7 ~ <4 9> ~ | synth bass | scale mayor | swing 0.32 | gain 0.7 -- bajo saltarín
 ~ <7 9 11 9> ~ ~ <12 ~> ~ ~ ~ | synth piano | scale mayor | delay 0.5 | pan 0.3 | gain 0.45 -- pianito`
@@ -140,9 +140,9 @@ hh hh? hh hh | kit 909 | swing 0.32 | gain 0.34 -- hats
     "casa",
     "Vecinos bailando",
     123,
-    `bd bd bd bd | kit linn | gain 0.9 -- bombo constante
+    `bd ~ bd ~ | kit linn | gain 0.9 -- bombo constante
 ~ ho ~ ho | kit linn | swing 0.38 | gain 0.42 -- hat abierto a contratiempo
-~ cp ~ cp | kit linn | reverb 0.32 | gain 0.5 -- palmada
+~ ~ cp ~ | kit linn | reverb 0.32 | gain 0.5 -- palmada
 hh hh hh hh | kit linn | fast 2 | swing 0.38 | gain 0.24 -- hats
 3 ~ [~ 3] 4 ~ <7 9> ~ ~ | synth bass | scale mayor | swing 0.38 | gain 0.68 -- bajo saltarín
 ~ <9 7 12 11> ~ ~ <11 ~> ~ ~ ~ | synth piano | scale mayor | delay 0.52 | pan -0.28 | gain 0.44 -- pianito`
@@ -151,9 +151,9 @@ hh hh hh hh | kit linn | fast 2 | swing 0.38 | gain 0.24 -- hats
     "casa",
     "Azotea al sol",
     125,
-    `bd bd bd bd | kit 909 | gain 0.9 -- bombo constante
+    `bd ~ bd ~ | kit 909 | gain 0.9 -- bombo constante
 ~ ho ~ ho | kit 909 | swing 0.28 | gain 0.46 -- hat abierto a contratiempo
-~ cp ~ cp | kit 909 | reverb 0.28 | gain 0.5 -- palmada
+~ ~ cp ~ | kit 909 | reverb 0.28 | gain 0.5 -- palmada
 0 [~ 0] ~ 4 ~ [~ 7] ~ <4 2> | synth bass | scale mayor | swing 0.28 | gain 0.7 -- bajo saltarín
 ~ <7 11 9 14> ~ ~ <12 ~> ~ ~ ~ | synth piano | scale mayor | delay 0.48 | pan 0.34 | gain 0.46 -- pianito
 cb(2,8) | pan 0.45 | gain 0.28 -- cencerro lejano`

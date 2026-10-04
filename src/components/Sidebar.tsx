@@ -70,13 +70,13 @@ const GROUPS: SnippetGroup[] = [
       {
         name: { es: "Techno de Detroit", en: "Detroit techno" },
         hint: { es: "strings + funk del futuro", en: "strings + future funk" },
-        code: "bd bd bd bd | kit 909 | gain 0.9 -- bombo constante\n~ cp ~ cp | kit 909 | reverb 0.3 | gain 0.5 -- palmada en el 2 y el 4\n~ ho ~ ho | kit 909 | gain 0.4 -- hat abierto a contratiempo\nhh hh hh hh | kit 909 | fast 2 | swing 0.3 | gain 0.28 -- hats rápidos con swing\n0 ~ [~ 0] ~ 3 ~ [~ 5] ~ | synth bass | scale menor | swing 0.15 | gain 0.7 -- bajo funk\n<0 5> ~ ~ ~ | synth pad | scale menor | slow 2 | reverb 0.55 | gain 0.55 -- cuerdas: la base\n<2 7> ~ ~ ~ | synth pad | scale menor | slow 2 | reverb 0.55 | gain 0.4 -- cuerdas: la armonía\n~ ~ <7 ~> ~ ~ <9 12> ~ ~ | synth piano | scale menor | delay 0.45 | pan 0.3 | gain 0.4 -- detalles de piano",
+        code: "bd ~ bd ~ | kit 909 | gain 0.9 -- bombo constante\n~ ~ cp ~ | kit 909 | reverb 0.3 | gain 0.5 -- palmada en el 2 y el 4\n~ ho ~ ho | kit 909 | gain 0.4 -- hat abierto a contratiempo\nhh hh hh hh | kit 909 | fast 2 | swing 0.3 | gain 0.28 -- hats rápidos con swing\n0 ~ [~ 0] ~ 3 ~ [~ 5] ~ | synth bass | scale menor | swing 0.15 | gain 0.7 -- bajo funk\n<0 5> ~ ~ ~ | synth pad | scale menor | slow 2 | reverb 0.55 | gain 0.55 -- cuerdas: la base\n<2 7> ~ ~ ~ | synth pad | scale menor | slow 2 | reverb 0.55 | gain 0.4 -- cuerdas: la armonía\n~ ~ <7 ~> ~ ~ <9 12> ~ ~ | synth piano | scale menor | delay 0.45 | pan 0.3 | gain 0.4 -- detalles de piano",
         bpm: 124,
       },
       {
         name: { es: "House clásico", en: "Classic house" },
         hint: { es: "swing + hat abierto", en: "swing + open hat" },
-        code: "bd bd bd bd | kit 909 | gain 0.9 -- bombo constante\n~ ho ~ ho | kit 909 | gain 0.45 | swing 0.15 -- hat abierto a contratiempo\nhh hh hh hh | fast 2 | swing 0.4 | gain 0.3 -- hats con swing\n~ cp ~ cp | kit linn | reverb 0.3 | gain 0.5 -- palmada\n0 ~ [~ 4] ~ 7 ~ <4 9> ~ | synth bass | scale mayor | swing 0.3 | gain 0.7 -- bajo saltarín\n<7 ~ ~ 9> ~ ~ <~ 11> ~ | synth piano | scale mayor | delay 0.5 | pan 0.3 | gain 0.45 -- pianito con eco",
+        code: "bd ~ bd ~ | kit 909 | gain 0.9 -- bombo constante\n~ ho ~ ho | kit 909 | gain 0.45 | swing 0.15 -- hat abierto a contratiempo\nhh hh hh hh | fast 2 | swing 0.4 | gain 0.3 -- hats con swing\n~ ~ cp ~ | kit linn | reverb 0.3 | gain 0.5 -- palmada\n0 ~ [~ 4] ~ 7 ~ <4 9> ~ | synth bass | scale mayor | swing 0.3 | gain 0.7 -- bajo saltarín\n<7 ~ ~ 9> ~ ~ <~ 11> ~ | synth piano | scale mayor | delay 0.5 | pan 0.3 | gain 0.45 -- pianito con eco",
         bpm: 124,
       },
       {
@@ -100,7 +100,7 @@ const GROUPS: SnippetGroup[] = [
       {
         name: { es: "Gabber", en: "Gabber" },
         hint: { es: "⚠ drive al máximo", en: "⚠ drive maxed out" },
-        code: "bd bd bd bd | kit 909 | drive 0.8 | lpf 3000 | gain 0.85 -- el martillo\n~ ~ ~ [bd bd] | kit 909 | drive 0.7 | gain 0.5 -- doble bombo\n~ cp ~ cp | kit 909 | drive 0.4 | reverb 0.25 | gain 0.5 -- palmada distorsionada\nhh*2 hh*2 hh*2 [hh*2 ho] | kit 909 | gain 0.3 -- hats frenéticos\n7 7 <7 10> 7 | synth acid | scale menor | drive 0.5 | gain 0.5 -- sinte chillando",
+        code: "bd ~ bd ~ | kit 909 | drive 0.8 | lpf 3000 | gain 0.85 -- el martillo\n~ ~ ~ ~ ~ ~ ~ [bd bd] | kit 909 | drive 0.7 | gain 0.5 -- doble bombo\n~ ~ cp ~ | kit 909 | drive 0.4 | reverb 0.25 | gain 0.5 -- palmada distorsionada\nhh*2 hh*2 hh*2 [hh*2 ho] | kit 909 | gain 0.3 -- hats frenéticos\n7 7 <7 10> 7 | synth acid | scale menor | drive 0.5 | gain 0.5 -- sinte chillando",
         bpm: 175,
       },
       {
@@ -112,7 +112,7 @@ const GROUPS: SnippetGroup[] = [
       {
         name: { es: "Ácido", en: "Acid" },
         hint: { es: "synth acid (303)", en: "synth acid (303)" },
-        code: "0 [0 12] 0 7 0 [0 12] <3 5> 0 | synth acid | scale menor | delay 0.3 | gain 0.75 -- la línea del 303\nbd bd bd bd | kit 909 | gain 0.9 -- bombo constante\n~ ho ~ ho | kit 909 | gain 0.35 -- hat abierto a contratiempo\n~ cp ~ cp | kit 909 | reverb 0.3 | gain 0.5 -- palmada\nhh hh hh hh | kit 909 | fast 2 | swing 0.2 | gain 0.25 -- hats bajitos",
+        code: "0 [0 12] 0 7 0 [0 12] <3 5> 0 | synth acid | scale menor | delay 0.3 | gain 0.75 -- la línea del 303\nbd ~ bd ~ | kit 909 | gain 0.9 -- bombo constante\n~ ho ~ ho | kit 909 | gain 0.35 -- hat abierto a contratiempo\n~ ~ cp ~ | kit 909 | reverb 0.3 | gain 0.5 -- palmada\nhh hh hh hh | kit 909 | fast 2 | swing 0.2 | gain 0.25 -- hats bajitos",
         bpm: 122,
       },
       {
