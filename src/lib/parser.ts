@@ -9,18 +9,28 @@ import { t } from "./i18n";
  */
 export type Loc = [from: number, to: number];
 
+/** Performance marks on a sounding token: `bd^` / `0^` = accent (louder,
+ *  and on the acid a wider filter bite); `hold` = how many `_` ties follow
+ *  (the sound lasts that many extra steps); `slide` = the note the acid
+ *  glides into when a held note runs straight into the next one (303). */
+export interface Marks {
+  accent?: boolean;
+  hold?: number;
+  slide?: { kind: "note"; midi: number } | { kind: "degree"; n: number };
+}
+
 export type Node =
   | { kind: "rest" }
-  | { kind: "hit"; id: string; variant: number; loc?: Loc }
-  | { kind: "note"; midi: number; label: string; loc?: Loc }
-  | { kind: "degree"; n: number; label: string; loc?: Loc }
+  | ({ kind: "hit"; id: string; variant: number; loc?: Loc } & Marks)
+  | ({ kind: "note"; midi: number; label: string; loc?: Loc } & Marks)
+  | ({ kind: "degree"; n: number; label: string; loc?: Loc } & Marks)
   | { kind: "group"; children: Node[] }
   | { kind: "alt"; choices: Node[] }
   | { kind: "prob"; child: Node; p: number };
 
-export type SynthName = "piano" | "bass" | "pad" | "acid";
+export type SynthName = "piano" | "bass" | "pad" | "acid" | "sub" | "reese";
 
-export const SYNTH_NAMES: SynthName[] = ["piano", "bass", "pad", "acid"];
+export const SYNTH_NAMES: SynthName[] = ["piano", "bass", "pad", "acid", "sub", "reese"];
 
 /** Scale intervals in semitones from the root (c4). Strudel names accepted.
  *  The three modes are the radio's colours: dórica = minor with a bright
@@ -58,11 +68,48 @@ export interface LaneFx {
   gain: number;
   pan: number;
   lpf: number | null;
+  /** resonance of the lane's lpf (0..1) */
+  res: number;
+  hpf: number | null;
   delay: number;
   reverb: number;
+  /** reverb size: 0 = small room … 1 = cathedral (default 0.35) */
+  size: number;
   /** 0..1 waveshaper distortion */
   drive: number;
+  /** sidechain: how deep this lane dips on every kick of the pattern (0..1) */
+  duck: number;
+  /** kick extras: sine sub layer and reverberated low rumble tail (0..1) */
+  sub: number;
+  rumble: number;
+  /** samples: retune in semitones, and cut their tail after N seconds */
+  pitch: number;
+  cut: number | null;
+  /** synth voice: filter cutoff Hz, envelope depth 0..1 and decay seconds */
+  cutoff: number | null;
+  env: number | null;
+  decay: number | null;
 }
+
+export const DEFAULT_FX: LaneFx = {
+  gain: 1,
+  pan: 0,
+  lpf: null,
+  res: 0,
+  hpf: null,
+  delay: 0,
+  reverb: 0,
+  size: 0.35,
+  drive: 0,
+  duck: 0,
+  sub: 0,
+  rumble: 0,
+  pitch: 0,
+  cut: null,
+  cutoff: null,
+  env: null,
+  decay: null,
+};
 
 export interface LaneDef {
   steps: Node[];
@@ -132,20 +179,28 @@ function tokenize(line: string): Tok[] {
 
 // ------------------------------------------------------------------ parser
 
-// sound[:variant][(k,n)][mods]  e.g. bd, bd:3, bd(3,8), hh*2?
-const WORD_RE = /^([a-z]+)(?::(\d+))?(?:\((\d+),(\d+)\))?((?:\*\d+|\?)*)$/;
+// mods: *N repeat · ? probability · ^ accent (performance mark)
+const MODS = "(?:\\*\\d+|\\?|\\^)*";
+// sound[:variant][(k,n)][mods]  e.g. bd, bd:3, bd(3,8), hh*2?, bd^
+const WORD_RE = new RegExp(`^([a-z]+)(?::(\\d+))?(?:\\((\\d+),(\\d+)\\))?(${MODS})$`);
 // note[octave][mods]  e.g. c, c#, e5, c#3*2
-const NOTE_RE = /^([a-g]#?)(\d)?((?:\*\d+|\?)*)$/;
-// scale degree  e.g. 0, 7, -2
-const DEGREE_RE = /^(-?\d{1,2})((?:\*\d+|\?)*)$/;
+const NOTE_RE = new RegExp(`^([a-g]#?)(\\d)?(${MODS})$`);
+// scale degree  e.g. 0, 7, -2, 0^
+const DEGREE_RE = new RegExp(`^(-?\\d{1,2})(${MODS})$`);
 // recorded voice slot  e.g. v1, v3(3,8), v2*2
-const VOICE_RE = /^(v[1-8])(?:\((\d+),(\d+)\))?((?:\*\d+|\?)*)$/;
+const VOICE_RE = new RegExp(`^(v[1-8])(?:\\((\\d+),(\\d+)\\))?(${MODS})$`);
 const REST_RE = /^~(?:\*\d+|\?)*$/;
-const MODS_RE = /^(?:\*\d+|\?)+$/;
+// `_` prolongs the previous sound one step (Strudel's tie)
+const TIE_RE = /^_$/;
+const MODS_RE = /^(?:\*\d+|\?|\^)+$/;
+
+const TIE: Node = { kind: "rest" };
 
 function applyMods(node: Node, mods: string): Node {
-  for (const m of mods.match(/\*\d+|\?/g) ?? []) {
-    if (m === "?") {
+  for (const m of mods.match(/\*\d+|\?|\^/g) ?? []) {
+    if (m === "^") {
+      if (node.kind === "hit" || node.kind === "note" || node.kind === "degree") node.accent = true;
+    } else if (m === "?") {
       node = { kind: "prob", child: node, p: 0.5 };
     } else {
       const times = Math.min(16, Math.max(1, parseInt(m.slice(1), 10)));
@@ -153,6 +208,36 @@ function applyMods(node: Node, mods: string): Node {
     }
   }
   return node;
+}
+
+const isLeaf = (node: Node): node is Extract<Node, { kind: "hit" | "note" | "degree" }> =>
+  node.kind === "hit" || node.kind === "note" || node.kind === "degree";
+
+/** Resolve `_` ties in a sequence: each tie becomes a rest and adds one step
+ *  of `hold` to the last sounding token before it. A held note that runs
+ *  straight into the next note is a 303 slide: remember where it glides. */
+function tieUp(nodes: Node[]): Node[] {
+  let last: Extract<Node, { kind: "hit" | "note" | "degree" }> | null = null;
+  let tied = false;
+  return nodes.map((node) => {
+    if (node === TIE) {
+      if (last) {
+        last.hold = (last.hold ?? 0) + 1;
+        tied = true;
+      }
+      return REST;
+    }
+    if (isLeaf(node)) {
+      if (tied && last && node.kind !== "hit") {
+        last.slide = node.kind === "note" ? { kind: "note", midi: node.midi } : { kind: "degree", n: node.n };
+      }
+      last = node;
+    } else {
+      last = null;
+    }
+    tied = false;
+    return node;
+  });
 }
 
 class LineParser {
@@ -180,12 +265,12 @@ class LineParser {
       const tok = this.toks[this.pos];
       if (tok.type === closer) {
         this.pos++;
-        return nodes;
+        return tieUp(nodes);
       }
       nodes.push(...this.parseElement());
     }
     if (closer) this.warn(t("w.unclosed", { c: closer }));
-    return nodes;
+    return tieUp(nodes);
   }
 
   private parseElement(): Node[] {
@@ -224,6 +309,7 @@ class LineParser {
     const text = tok.text;
     const loc: Loc = [this.lineOffset + tok.from, this.lineOffset + tok.to];
     if (REST_RE.test(text)) return [REST];
+    if (TIE_RE.test(text)) return [TIE];
 
     const m = WORD_RE.exec(text);
     const soundId = m ? (SOUND_ALIASES[m[1]] ?? m[1]) : "";
@@ -292,7 +378,7 @@ class LineParser {
 const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
 
 const COMMAND_HELP =
-  "fast, slow, rev, every, swing, lpf, delay, reverb, drive, pan, gain, synth, scale, kit";
+  "fast, slow, rev, every, swing, lpf, hpf, res, delay, reverb, size, drive, duck, sub, rumble, pitch, cut, cutoff, env, decay, pan, gain, synth, scale, kit";
 
 function parseCommands(
   segments: string[],
@@ -308,7 +394,7 @@ function parseCommands(
   let scale = SCALES.mayor;
   let kit: string | null = null;
   let swing = 0;
-  const fx: LaneFx = { gain: 1, pan: 0, lpf: null, delay: 0, reverb: 0, drive: 0 };
+  const fx: LaneFx = { ...DEFAULT_FX };
 
   for (const segment of segments) {
     const words = segment.trim().split(/\s+/).filter(Boolean);
@@ -362,6 +448,39 @@ function parseCommands(
         break;
       case "drive":
         if (!needsNumber()) fx.drive = clamp(num, 0, 1);
+        break;
+      case "hpf":
+        if (!needsNumber()) fx.hpf = clamp(num, 20, 8000);
+        break;
+      case "res":
+        if (!needsNumber()) fx.res = clamp(num, 0, 1);
+        break;
+      case "size":
+        if (!needsNumber()) fx.size = clamp(num, 0, 1);
+        break;
+      case "duck":
+        if (!needsNumber()) fx.duck = clamp(num, 0, 1);
+        break;
+      case "sub":
+        if (!needsNumber()) fx.sub = clamp(num, 0, 1);
+        break;
+      case "rumble":
+        if (!needsNumber()) fx.rumble = clamp(num, 0, 1);
+        break;
+      case "pitch":
+        if (!needsNumber()) fx.pitch = clamp(num, -24, 24);
+        break;
+      case "cut":
+        if (!needsNumber()) fx.cut = clamp(num, 0.01, 4);
+        break;
+      case "cutoff":
+        if (!needsNumber()) fx.cutoff = clamp(num, 50, 8000);
+        break;
+      case "env":
+        if (!needsNumber()) fx.env = clamp(num, 0, 1);
+        break;
+      case "decay":
+        if (!needsNumber()) fx.decay = clamp(num, 0.02, 2);
         break;
       case "synth":
         if ((SYNTH_NAMES as string[]).includes(a)) synth = a as SynthName;

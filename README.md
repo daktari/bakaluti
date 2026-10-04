@@ -81,6 +81,14 @@ Al final de una línea, separados por `|`:
 | `\| reverb 0.4`| espacio (0–1)                         |
 | `\| pan -1`    | izquierda ↔ derecha (-1 a 1)          |
 | `\| gain 0.5`  | volumen de la línea (0–2)             |
+| `\| hpf 200`   | filtro: quita los graves              |
+| `\| res 0.5`   | resonancia del filtro (0–1)           |
+| `\| size 0.8`  | tamaño de la reverb: sala → catedral  |
+| `\| duck 0.6`  | sidechain: se hunde con cada bombo    |
+| `\| sub 0.5`   | capa de sub bajo el bombo             |
+| `\| rumble 0.4`| cola grave de reverb bajo el bombo    |
+| `\| pitch -3`  | reafina los samples (semitonos)       |
+| `\| cut 0.1`   | corta el sample a los N segundos      |
 
 ```
 bd ~ sn ~ | every 4 rev
@@ -123,7 +131,10 @@ una batería real.
 
 - Notas: `c d e f g a b` (do–si), `c5` = más aguda, `c#` = sostenido.
 - Peldaños: `0 2 4 7` — números sobre una escala; imposible desafinar.
-- `| synth piano` (o `bass`, `pad`) elige el instrumento.
+- `| synth piano` (o `bass`, `pad`, `acid`, `sub`, `reese`) elige el instrumento.
+- `0^` acentúa una nota y `_` la alarga; en el ácido, una nota ligada a la
+  siguiente hace **slide** como un 303. `| cutoff 500 | res 0.7 | env 0.6 | decay 0.3`
+  gobiernan el filtro del sinte.
 - `| scale menor` (o `mayor`, `penta`, `dorica`, `frigia`, `lidia`) elige la escala de los peldaños.
 
 ```

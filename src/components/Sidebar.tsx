@@ -70,7 +70,7 @@ const GROUPS: SnippetGroup[] = [
       {
         name: { es: "Techno de Detroit", en: "Detroit techno" },
         hint: { es: "strings + funk del futuro", en: "strings + future funk" },
-        code: "bd ~ bd ~ | kit 909 | gain 0.9 -- bombo constante\n~ ~ cp ~ | kit 909 | reverb 0.3 | gain 0.5 -- palmada en el 2 y el 4\n~ ho ~ ho | kit 909 | gain 0.4 -- hat abierto a contratiempo\nhh hh hh hh | kit 909 | fast 2 | swing 0.3 | gain 0.28 -- hats rápidos con swing\n0 ~ [~ 0] ~ 3 ~ [~ 5] ~ | synth bass | scale menor | swing 0.15 | gain 0.7 -- bajo funk\n<0 5> ~ ~ ~ | synth pad | scale menor | slow 2 | reverb 0.55 | gain 0.55 -- cuerdas: la base\n<2 7> ~ ~ ~ | synth pad | scale menor | slow 2 | reverb 0.55 | gain 0.4 -- cuerdas: la armonía\n~ ~ <7 ~> ~ ~ <9 12> ~ ~ | synth piano | scale menor | delay 0.45 | pan 0.3 | gain 0.4 -- detalles de piano",
+        code: "bd ~ bd ~ | kit 909 | sub 0.4 | rumble 0.3 | gain 0.9 -- bombo constante, con sub y rumble\n~ ~ cp ~ | kit 909 | reverb 0.3 | gain 0.5 -- palmada en el 2 y el 4\n~ ho ~ ho | kit 909 | gain 0.4 -- hat abierto a contratiempo\nhh hh hh hh | kit 909 | fast 2 | swing 0.3 | gain 0.28 -- hats rápidos con swing\n0 ~ [~ 0] ~ 3 ~ [~ 5] ~ | synth bass | scale menor | swing 0.15 | duck 0.45 | gain 0.7 -- bajo funk, hundido por el bombo\n<0 5> ~ ~ ~ | synth pad | scale menor | slow 2 | reverb 0.55 | size 0.6 | duck 0.3 | gain 0.55 -- cuerdas: la base\n<2 7> ~ ~ ~ | synth pad | scale menor | slow 2 | reverb 0.55 | size 0.6 | duck 0.3 | gain 0.4 -- cuerdas: la armonía\n~ ~ <7 ~> ~ ~ <9 12> ~ ~ | synth piano | scale menor | delay 0.45 | pan 0.3 | gain 0.4 -- detalles de piano",
         bpm: 124,
       },
       {
@@ -100,7 +100,7 @@ const GROUPS: SnippetGroup[] = [
       {
         name: { es: "Gabber", en: "Gabber" },
         hint: { es: "⚠ drive al máximo", en: "⚠ drive maxed out" },
-        code: "bd ~ bd ~ | kit 909 | drive 0.8 | lpf 3000 | gain 0.85 -- el martillo\n~ ~ ~ ~ ~ ~ ~ [bd bd] | kit 909 | drive 0.7 | gain 0.5 -- doble bombo\n~ ~ cp ~ | kit 909 | drive 0.4 | reverb 0.25 | gain 0.5 -- palmada distorsionada\nhh*2 hh*2 hh*2 [hh*2 ho] | kit 909 | gain 0.3 -- hats frenéticos\n7 7 <7 10> 7 | synth acid | scale menor | drive 0.5 | gain 0.5 -- sinte chillando",
+        code: "bd ~ bd ~ | kit 909 | drive 0.8 | lpf 3000 | sub 0.5 | rumble 0.4 | gain 0.85 -- el martillo\n~ ~ ~ ~ ~ ~ ~ [bd bd] | kit 909 | drive 0.7 | gain 0.5 -- doble bombo\n~ ~ cp ~ | kit 909 | drive 0.4 | reverb 0.25 | gain 0.5 -- palmada distorsionada\nhh*2 hh*2 hh*2 [hh*2 ho] | kit 909 | gain 0.3 -- hats frenéticos\n7^ 7 <7 10> 7 _ | synth acid | scale menor | cutoff 600 | res 0.8 | env 0.7 | decay 0.2 | drive 0.5 | duck 0.4 | gain 0.5 -- sinte chillando",
         bpm: 175,
       },
       {
@@ -112,7 +112,7 @@ const GROUPS: SnippetGroup[] = [
       {
         name: { es: "Ácido", en: "Acid" },
         hint: { es: "synth acid (303)", en: "synth acid (303)" },
-        code: "0 [0 12] 0 7 0 [0 12] <3 5> 0 | synth acid | scale menor | delay 0.3 | gain 0.75 -- la línea del 303\nbd ~ bd ~ | kit 909 | gain 0.9 -- bombo constante\n~ ho ~ ho | kit 909 | gain 0.35 -- hat abierto a contratiempo\n~ ~ cp ~ | kit 909 | reverb 0.3 | gain 0.5 -- palmada\nhh hh hh hh | kit 909 | fast 2 | swing 0.2 | gain 0.25 -- hats bajitos",
+        code: "0^ [0 12] 0 _ 7 0^ [0 12] <3 5> 0 _ | synth acid | scale menor | cutoff 450 | res 0.75 | env 0.7 | decay 0.3 | delay 0.3 | duck 0.4 | gain 0.75 -- la línea del 303: acentos y slides\nbd ~ bd ~ | kit 909 | gain 0.9 -- bombo constante\n~ ho ~ ho | kit 909 | gain 0.35 -- hat abierto a contratiempo\n~ ~ cp ~ | kit 909 | reverb 0.3 | gain 0.5 -- palmada\nhh hh hh hh | kit 909 | fast 2 | swing 0.2 | gain 0.25 -- hats bajitos",
         bpm: 122,
       },
       {

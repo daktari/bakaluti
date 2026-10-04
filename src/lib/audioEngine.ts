@@ -1,10 +1,13 @@
 import {
   collectPianoMidis,
   collectSampleKeys,
+  DEFAULT_FX,
   degreeToMidi,
   SCALES,
   type LaneDef,
+  type LaneFx,
   type Loc,
+  type Marks,
   type Node,
   type SynthName,
 } from "./parser";
@@ -20,6 +23,8 @@ const LOOKAHEAD_MS = 25;
 const SCHEDULE_AHEAD_SECONDS = 0.12;
 /** Max time to wait for samples before starting playback anyway. */
 const PRELOAD_TIMEOUT_MS = 2000;
+/** The ladder filter lives in an AudioWorklet served as a static file. */
+const LADDER_URL = "/ladder.js";
 
 type StepListener = (step: number) => void;
 type FlashListener = (from: number, to: number) => void;
@@ -27,26 +32,38 @@ type FlashListener = (from: number, to: number) => void;
 interface LaneState {
   nextTime: number;
   index: number;
-  /** last acid-synth frequency, for the 303-style glide */
-  acidFreq: number | null;
+  /** acid: a note reached by a slide from the previous one starts here —
+   *  it must not retrigger (the previous voice already glided into it) */
+  slideUntil: number | null;
   /** ringing open hats — choked when a closed hat arrives */
   openHats: { gain: GainNode; start: number }[];
 }
 
 interface Chain {
   input: GainNode;
+  /** sidechain gain: dips on every kick of the pattern (`duck`) */
+  duck: GainNode;
   delay: DelayNode | null;
+  /** kick rumble bus: kicks feed it, a long dark reverb rings under them */
+  rumbleIn: GainNode | null;
+  rumbleGain: GainNode | null;
   nodes: AudioNode[];
+  lastDuck: number;
 }
 
 /** Everything a lane needs to render events into some audio context. */
 interface LaneIO {
   ctx: BaseAudioContext;
   dest: AudioNode;
+  chain: Chain | null;
   lane: LaneDef;
   state: LaneState;
   flash: ((loc: Loc, time: number) => void) | null;
+  /** kick times rendered so far — the sidechain reads them after the pass */
+  kicks: number[];
 }
+
+const freshState = (): LaneState => ({ nextTime: 0, index: 0, slideUntil: null, openHats: [] });
 
 // ------------------------------------------------------- shared audio helpers
 
@@ -63,22 +80,53 @@ function noiseBuffer(ctx: BaseAudioContext): AudioBuffer {
   return buffer;
 }
 
-const impulseCache = new WeakMap<BaseAudioContext, AudioBuffer>();
+const impulseCache = new WeakMap<BaseAudioContext, Map<string, AudioBuffer>>();
 
-/** Synthesized 1.5s decaying-noise impulse response — free "room". */
-function impulseResponse(ctx: BaseAudioContext): AudioBuffer {
-  let buffer = impulseCache.get(ctx);
-  if (!buffer) {
-    const length = Math.floor(ctx.sampleRate * 1.5);
-    buffer = ctx.createBuffer(2, length, ctx.sampleRate);
-    for (let channel = 0; channel < 2; channel++) {
-      const data = buffer.getChannelData(channel);
-      for (let i = 0; i < length; i++) {
-        data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / length, 2.5);
-      }
-    }
-    impulseCache.set(ctx, buffer);
+/**
+ * Synthesized stereo impulse response. `size` 0..1 maps to 0.6-6 s. The
+ * tail is split in two bands: highs die much sooner than lows (as in any
+ * real room), the sub is kept out of the tail so it never turns to mud,
+ * the two channels are decorrelated noise, and a short predelay keeps the
+ * dry hit in front. `dark` = the kick rumble's basement.
+ */
+function impulseResponse(ctx: BaseAudioContext, size: number, dark = false): AudioBuffer {
+  let perCtx = impulseCache.get(ctx);
+  if (!perCtx) {
+    perCtx = new Map();
+    impulseCache.set(ctx, perCtx);
   }
+  const key = `${Math.round(size * 20)}${dark ? "d" : ""}`;
+  const cached = perCtx.get(key);
+  if (cached) return cached;
+
+  const sr = ctx.sampleRate;
+  const seconds = 0.6 + size * 5.4;
+  const predelay = Math.floor(sr * 0.015);
+  const length = Math.floor(sr * seconds) + predelay;
+  const buffer = ctx.createBuffer(2, length, sr);
+  const t60Low = seconds;
+  const t60High = seconds * (dark ? 0.15 : 0.45);
+  const decayLow = Math.log(1000) / (t60Low * sr);
+  const decayHigh = Math.log(1000) / (t60High * sr);
+  // one-pole split around 1.2 kHz (dark: 300 Hz), one-pole sub cut ~110 Hz
+  const splitA = 1 - Math.exp((-2 * Math.PI * (dark ? 300 : 1200)) / sr);
+  const subA = 1 - Math.exp((-2 * Math.PI * 110) / sr);
+  for (let channel = 0; channel < 2; channel++) {
+    const data = buffer.getChannelData(channel);
+    let low = 0;
+    let sub = 0;
+    for (let i = predelay; i < length; i++) {
+      const n = Math.random() * 2 - 1;
+      low += splitA * (n - low);
+      const high = n - low;
+      const k = i - predelay;
+      let v = low * Math.exp(-decayLow * k) + high * Math.exp(-decayHigh * k);
+      sub += subA * (v - sub);
+      v -= sub;
+      data[i] = v;
+    }
+  }
+  perCtx.set(key, buffer);
   return buffer;
 }
 
@@ -89,6 +137,18 @@ function driveCurve(amount: number): Float32Array {
   for (let i = 0; i < curve.length; i++) {
     const x = (i / (curve.length - 1)) * 2 - 1;
     curve[i] = ((1 + k) * x) / (1 + k * Math.abs(x));
+  }
+  return curve;
+}
+
+/** Gentle tape-style saturation for the master: barely audible at normal
+ *  levels, rounds the peaks when the mix pushes. */
+function tapeCurve(): Float32Array {
+  const curve = new Float32Array(2048);
+  const k = 1.6;
+  for (let i = 0; i < curve.length; i++) {
+    const x = (i / (curve.length - 1)) * 2 - 1;
+    curve[i] = Math.tanh(x * k) / Math.tanh(k);
   }
   return curve;
 }
@@ -104,7 +164,40 @@ function makeCompressor(ctx: BaseAudioContext): DynamicsCompressorNode {
   return comp;
 }
 
-/** Per-lane fx chain: input → [lpf] → pan → master, + delay/reverb sends. */
+/** Brickwall-ish limiter: the last thing before the speakers. */
+function makeLimiter(ctx: BaseAudioContext): DynamicsCompressorNode {
+  const lim = ctx.createDynamicsCompressor();
+  lim.threshold.value = -1.5;
+  lim.knee.value = 0;
+  lim.ratio.value = 20;
+  lim.attack.value = 0.001;
+  lim.release.value = 0.08;
+  return lim;
+}
+
+/** master gain → sub cut → glue → tape → limiter → out */
+function buildMaster(ctx: BaseAudioContext, volume: number): GainNode {
+  const master = ctx.createGain();
+  master.gain.value = volume;
+  const hpf = ctx.createBiquadFilter();
+  hpf.type = "highpass";
+  hpf.frequency.value = 25;
+  hpf.Q.value = 0.7;
+  const comp = makeCompressor(ctx);
+  const tape = ctx.createWaveShaper();
+  tape.curve = tapeCurve();
+  tape.oversample = "2x";
+  const limiter = makeLimiter(ctx);
+  master.connect(hpf);
+  hpf.connect(comp);
+  comp.connect(tape);
+  tape.connect(limiter);
+  limiter.connect(ctx.destination);
+  return master;
+}
+
+/** Per-lane fx chain: input → duck → [drive] → [hpf] → [lpf] → pan → master,
+ *  + delay/reverb sends, + the kick rumble bus. */
 function createChains(
   ctx: BaseAudioContext,
   master: AudioNode,
@@ -116,8 +209,11 @@ function createChains(
     const nodes: AudioNode[] = [];
     const input = ctx.createGain();
     input.gain.value = (laneGains[i] ?? 1) * lane.fx.gain;
-    nodes.push(input);
-    let head: AudioNode = input;
+    const duck = ctx.createGain();
+    duck.gain.value = 1;
+    input.connect(duck);
+    nodes.push(input, duck);
+    let head: AudioNode = duck;
 
     if (lane.fx.drive > 0) {
       const shaper = ctx.createWaveShaper();
@@ -131,11 +227,21 @@ function createChains(
       nodes.push(shaper, post);
     }
 
+    if (lane.fx.hpf !== null) {
+      const filter = ctx.createBiquadFilter();
+      filter.type = "highpass";
+      filter.frequency.value = lane.fx.hpf;
+      filter.Q.value = 0.7;
+      head.connect(filter);
+      head = filter;
+      nodes.push(filter);
+    }
+
     if (lane.fx.lpf !== null) {
       const filter = ctx.createBiquadFilter();
       filter.type = "lowpass";
       filter.frequency.value = lane.fx.lpf;
-      filter.Q.value = 1;
+      filter.Q.value = 1 + lane.fx.res * 12;
       head.connect(filter);
       head = filter;
       nodes.push(filter);
@@ -167,14 +273,34 @@ function createChains(
       const send = ctx.createGain();
       send.gain.value = lane.fx.reverb;
       const convolver = ctx.createConvolver();
-      convolver.buffer = impulseResponse(ctx);
+      convolver.buffer = impulseResponse(ctx, lane.fx.size);
       panner.connect(send);
       send.connect(convolver);
       convolver.connect(master);
       nodes.push(send, convolver);
     }
 
-    return { input, delay, nodes };
+    let rumbleIn: GainNode | null = null;
+    let rumbleGain: GainNode | null = null;
+    if (lane.fx.rumble > 0) {
+      rumbleIn = ctx.createGain();
+      rumbleIn.gain.value = 1;
+      const convolver = ctx.createConvolver();
+      convolver.buffer = impulseResponse(ctx, 0.55, true);
+      const low = ctx.createBiquadFilter();
+      low.type = "lowpass";
+      low.frequency.value = 160;
+      low.Q.value = 0.8;
+      rumbleGain = ctx.createGain();
+      rumbleGain.gain.value = lane.fx.rumble * 1.4;
+      rumbleIn.connect(convolver);
+      convolver.connect(low);
+      low.connect(rumbleGain);
+      rumbleGain.connect(master);
+      nodes.push(rumbleIn, convolver, low, rumbleGain);
+    }
+
+    return { input, duck, delay, rumbleIn, rumbleGain, nodes, lastDuck: -1 };
   });
 }
 
@@ -215,14 +341,30 @@ function encodeWav(buffer: AudioBuffer): Blob {
   return new Blob([arrayBuffer], { type: "audio/wav" });
 }
 
+/** does this lane ever trigger a kick? (the sidechain's source) */
+export function laneHasKick(lane: LaneDef): boolean {
+  const walk = (node: Node): boolean =>
+    node.kind === "hit"
+      ? node.id === "bd"
+      : node.kind === "group"
+        ? node.children.some(walk)
+        : node.kind === "alt"
+          ? node.choices.some(walk)
+          : node.kind === "prob"
+            ? walk(node.child)
+            : false;
+  return lane.steps.some(walk) || (lane.everySteps?.some(walk) ?? false);
+}
+
 // ------------------------------------------------------------------- engine
 
 /**
  * Lookahead scheduler with one clock per lane (so `fast`/`slow` work) plus
  * a base clock that drives the UI step highlight. Sounds route through
- * per-lane fx chains into a master gain → compressor → speakers, with an
- * analyser tap for the visualizer. Can also render the pattern offline
- * to a WAV file. Falls back to synthesized bd/sn/hh when offline.
+ * per-lane fx chains into a master gain → sub cut → glue compressor → tape
+ * → limiter → speakers, with an analyser tap for the visualizer. Can also
+ * render the pattern offline to a WAV file. Falls back to synthesized
+ * bd/sn/hh when offline.
  */
 class AudioEngine {
   private ctx: AudioContext | null = null;
@@ -240,10 +382,15 @@ class AudioEngine {
   private uiStep = 0;
   private onStep: StepListener | null = null;
   private onFlash: FlashListener | null = null;
+  /** kicks scheduled in the current window — ducks are applied after it */
+  private liveKicks: number[] = [];
 
   private bpm = DEFAULT_BPM;
   private volume = 0.9;
   private laneGains: number[] = [];
+
+  /** per context: is the ladder worklet usable? */
+  private ladder = new WeakMap<BaseAudioContext, Promise<boolean>>();
 
   get isPlaying(): boolean {
     return this.timer !== null;
@@ -265,18 +412,36 @@ class AudioEngine {
         window.AudioContext ??
         (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
       this.ctx = new Ctor();
-      this.master = this.ctx.createGain();
-      this.master.gain.value = this.volume;
-      const comp = makeCompressor(this.ctx);
-      this.master.connect(comp);
-      comp.connect(this.ctx.destination);
+      this.master = buildMaster(this.ctx, this.volume);
       this.analyser = this.ctx.createAnalyser();
       this.analyser.fftSize = 256;
       this.analyser.smoothingTimeConstant = 0.75;
       this.master.connect(this.analyser);
+      void this.loadLadder(this.ctx);
     }
     return this.ctx;
   }
+
+  /** Load the ladder filter worklet once per context (true when usable). */
+  private loadLadder(ctx: BaseAudioContext): Promise<boolean> {
+    let promise = this.ladder.get(ctx);
+    if (!promise) {
+      promise = (async () => {
+        if (!ctx.audioWorklet) return false;
+        try {
+          await ctx.audioWorklet.addModule(LADDER_URL);
+          return true;
+        } catch (err) {
+          console.warn("ladder worklet unavailable, using biquads:", err);
+          return false;
+        }
+      })();
+      this.ladder.set(ctx, promise);
+    }
+    return promise;
+  }
+
+  private ladderReady = new WeakSet<BaseAudioContext>();
 
   /** Fill `data` with the current spectrum; false if audio never started. */
   getFrequencyData(data: Uint8Array): boolean {
@@ -385,6 +550,9 @@ class AudioEngine {
       keys.length > 0 ? sampleBank.preload(ctx, keys) : Promise.resolve(),
       pianoMidis.length > 0 ? sampleBank.preloadPitched(ctx, "piano", pianoMidis) : Promise.resolve(),
       voiceBank.ensureDecoded(ctx),
+      this.loadLadder(ctx).then((ok) => {
+        if (ok) this.ladderReady.add(ctx);
+      }),
     ]);
   }
 
@@ -395,8 +563,8 @@ class AudioEngine {
     const keys = [`${id}:${variant}`];
     if (kit) keys.unshift(`${kitSampleId(kit, id)}:${variant}`);
     if (!id.startsWith("v")) await sampleBank.preload(ctx, keys);
-    const io = this.previewIO(ctx, { kit } as LaneDef);
-    this.triggerHit(io, id, variant, ctx.currentTime + 0.02);
+    const io = this.previewIO(ctx, { kit, fx: DEFAULT_FX } as LaneDef);
+    this.triggerHit(io, id, variant, ctx.currentTime + 0.02, {});
   }
 
   /** One-shot audition of a melodic note with a given synth. */
@@ -404,17 +572,19 @@ class AudioEngine {
     const ctx = this.ensureContext();
     void ctx.resume();
     if (synth === "piano") await sampleBank.preloadPitched(ctx, "piano", [midi]);
-    const io = this.previewIO(ctx, { synth, scale: SCALES.mayor } as LaneDef);
-    this.playNote(io, midi, ctx.currentTime + 0.02, 0.4);
+    const io = this.previewIO(ctx, { synth, scale: SCALES.mayor, fx: DEFAULT_FX } as LaneDef);
+    this.playNote(io, midi, ctx.currentTime + 0.02, 0.4, {});
   }
 
   private previewIO(ctx: AudioContext, lane: LaneDef): LaneIO {
     return {
       ctx,
       dest: this.master ?? ctx.destination,
+      chain: null,
       lane,
-      state: { nextTime: 0, index: 0, acidFreq: null, openHats: [] },
+      state: freshState(),
       flash: null,
+      kicks: [],
     };
   }
 
@@ -443,12 +613,7 @@ class AudioEngine {
     this.startTime = ctx.currentTime + 0.08;
     this.uiNextTime = this.startTime;
     this.uiStep = 0;
-    this.laneStates = this.lanes.map(() => ({
-      nextTime: this.startTime,
-      index: 0,
-      acidFreq: null,
-      openHats: [],
-    }));
+    this.laneStates = this.lanes.map(() => ({ ...freshState(), nextTime: this.startTime }));
     this.timer = window.setInterval(() => this.scheduleWindow(), LOOKAHEAD_MS);
   }
 
@@ -467,7 +632,7 @@ class AudioEngine {
       return {
         nextTime: this.uiNextTime,
         index,
-        acidFreq: this.laneStates[i]?.acidFreq ?? null,
+        slideUntil: this.laneStates[i]?.slideUntil ?? null,
         openHats: this.laneStates[i]?.openHats ?? [],
       };
     });
@@ -482,6 +647,7 @@ class AudioEngine {
     this.uiTimeouts = [];
     this.onStep = null;
     this.onFlash = null;
+    this.liveKicks = [];
     // chains stay connected so delay/reverb tails ring out naturally
   }
 
@@ -493,21 +659,21 @@ class AudioEngine {
 
     const rate = 44100;
     const body = baseSteps * this.stepSeconds;
-    const octx = new OfflineAudioContext(2, Math.ceil(rate * (body + 1.2)), rate);
-    const master = octx.createGain();
-    master.gain.value = this.volume;
-    const comp = makeCompressor(octx);
-    master.connect(comp);
-    comp.connect(octx.destination);
+    const octx = new OfflineAudioContext(2, Math.ceil(rate * (body + 1.5)), rate);
+    if (await this.loadLadder(octx)) this.ladderReady.add(octx);
+    const master = buildMaster(octx, this.volume);
     const chains = createChains(octx, master, lanes, this.laneGains, this.delaySeconds);
+    const kicks: number[] = [];
 
     lanes.forEach((lane, i) => {
       const io: LaneIO = {
         ctx: octx,
         dest: chains[i]?.input ?? master,
+        chain: chains[i] ?? null,
         lane,
-        state: { nextTime: 0, index: 0, acidFreq: null, openHats: [] },
+        state: freshState(),
         flash: null,
+        kicks,
       };
       const duration = this.stepSeconds / lane.speed;
       const length = lane.steps.length;
@@ -525,6 +691,7 @@ class AudioEngine {
         index += 1;
       }
     });
+    this.applyDucks(chains, lanes, kicks);
 
     return encodeWav(await octx.startRendering());
   }
@@ -551,11 +718,13 @@ class AudioEngine {
       const io: LaneIO = {
         ctx,
         dest: this.chains[laneIndex]?.input ?? this.master ?? ctx.destination,
+        chain: this.chains[laneIndex] ?? null,
         lane,
         state,
         flash: this.onFlash
           ? (loc, time) => this.scheduleUiCallback(time, () => this.onFlash?.(loc[0], loc[1]))
           : null,
+        kicks: this.liveKicks,
       };
       const duration = this.stepSeconds / lane.speed;
       const length = lane.steps.length;
@@ -570,6 +739,36 @@ class AudioEngine {
         this.renderNode(steps[state.index % length], swung, duration, cycle, io);
         state.nextTime += duration;
         state.index += 1;
+      }
+    });
+
+    // every kick of the window is known now: dip the ducked lanes
+    this.applyDucks(this.chains, this.lanes, this.liveKicks);
+    this.liveKicks = [];
+  }
+
+  /** The sidechain: on every kick, ducked lanes drop and recover; the
+   *  rumble bus ducks against its own kick so the sub stays clean. */
+  private applyDucks(chains: Chain[], lanes: LaneDef[], kicks: number[]) {
+    if (kicks.length === 0) return;
+    const times = [...new Set(kicks)].sort((a, b) => a - b);
+    const release = Math.max(0.06, this.stepSeconds * 0.9);
+    chains.forEach((chain, i) => {
+      const lane = lanes[i];
+      const depth = lane?.fx.duck ?? 0;
+      for (const t of times) {
+        if (t <= chain.lastDuck + 0.005) continue;
+        chain.lastDuck = t;
+        if (depth > 0) {
+          chain.duck.gain.setValueAtTime(1 - depth, t);
+          chain.duck.gain.setTargetAtTime(1, t + 0.03, release / 3);
+        }
+        if (chain.rumbleGain) {
+          const g = chain.rumbleGain.gain;
+          const full = (lane?.fx.rumble ?? 0) * 1.4;
+          g.setValueAtTime(full * 0.1, t);
+          g.setTargetAtTime(full, t + 0.05, 0.1);
+        }
       }
     });
   }
@@ -591,15 +790,15 @@ class AudioEngine {
         return;
       case "hit":
         if (node.loc) io.flash?.(node.loc, time);
-        this.triggerHit(io, node.id, node.variant, time);
+        this.triggerHit(io, node.id, node.variant, time, node);
         return;
       case "note":
         if (node.loc) io.flash?.(node.loc, time);
-        this.playNote(io, node.midi, time, duration);
+        this.playNote(io, node.midi, time, duration, node);
         return;
       case "degree": {
         if (node.loc) io.flash?.(node.loc, time);
-        this.playNote(io, degreeToMidi(node.n, io.lane.scale ?? SCALES.mayor), time, duration);
+        this.playNote(io, degreeToMidi(node.n, io.lane.scale ?? SCALES.mayor), time, duration, node);
         return;
       }
       case "group": {
@@ -620,11 +819,13 @@ class AudioEngine {
 
   // ------------------------------------------------------------ triggering
 
-  private triggerHit(io: LaneIO, id: string, variant: number, time: number) {
+  private triggerHit(io: LaneIO, id: string, variant: number, time: number, marks: Marks) {
+    const accent = marks.accent ? 1.5 : 1;
+
     // Recorded voice slots (v1..v8).
     if (/^v[1-8]$/.test(id)) {
       const voice = voiceBank.get(id);
-      if (voice) this.playBuffer(io, voice, time);
+      if (voice) this.playBuffer(io, voice, time, { gain: accent });
       return;
     }
 
@@ -639,6 +840,11 @@ class AudioEngine {
       });
     }
 
+    if (id === "bd") {
+      io.kicks.push(time);
+      if (io.lane.fx.sub > 0) this.playSubKick(io, time, io.lane.fx.sub * accent);
+    }
+
     // Kit sample first (e.g. RolandTR808_bd), default sample as fallback.
     let buffer = io.lane.kit ? sampleBank.get(kitSampleId(io.lane.kit, id), variant) : undefined;
     buffer = buffer ?? sampleBank.get(id, variant);
@@ -647,33 +853,72 @@ class AudioEngine {
         const choke = io.ctx.createGain();
         choke.connect(io.dest);
         io.state.openHats.push({ gain: choke, start: time });
-        this.playBuffer(io, buffer, time, choke);
+        this.playBuffer(io, buffer, time, { gain: accent, through: choke });
         return;
       }
-      this.playBuffer(io, buffer, time);
-    } else if (id === "bd") this.playKick(io, time);
+      this.playBuffer(io, buffer, time, { gain: accent, rumble: id === "bd" });
+    } else if (id === "bd") this.playKick(io, time, accent);
     else if (id === "sn") this.playSnare(io, time);
     else if (id === "hh") this.playHat(io, time);
     // other sounds stay silent until their sample arrives
   }
 
-  private playBuffer(io: LaneIO, buffer: AudioBuffer, time: number, through?: AudioNode) {
+  private playBuffer(
+    io: LaneIO,
+    buffer: AudioBuffer,
+    time: number,
+    opts: { gain?: number; through?: AudioNode; rumble?: boolean } = {}
+  ) {
+    const { fx } = io.lane;
     const source = io.ctx.createBufferSource();
     source.buffer = buffer;
-    source.connect(through ?? io.dest);
+    if (fx.pitch !== 0) source.playbackRate.value = Math.pow(2, fx.pitch / 12);
+    let out: AudioNode = source;
+    if ((opts.gain ?? 1) !== 1 || fx.cut !== null) {
+      const g = io.ctx.createGain();
+      g.gain.setValueAtTime(opts.gain ?? 1, time);
+      if (fx.cut !== null) {
+        g.gain.setValueAtTime(opts.gain ?? 1, time + fx.cut);
+        g.gain.linearRampToValueAtTime(0, time + fx.cut + 0.012);
+      }
+      source.connect(g);
+      out = g;
+    }
+    out.connect(opts.through ?? io.dest);
+    if (opts.rumble && io.chain?.rumbleIn) out.connect(io.chain.rumbleIn);
     source.start(time);
+    if (fx.cut !== null) source.stop(time + fx.cut + 0.05);
   }
 
-  private playKick(io: LaneIO, time: number) {
+  /** The sine sub layer under a kick: a pitch drop and a long body. */
+  private playSubKick(io: LaneIO, time: number, amount: number) {
+    const { ctx } = io;
+    const osc = ctx.createOscillator();
+    osc.type = "sine";
+    osc.frequency.setValueAtTime(95, time);
+    osc.frequency.exponentialRampToValueAtTime(42, time + 0.09);
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0, time);
+    g.gain.linearRampToValueAtTime(0.75 * amount, time + 0.004);
+    g.gain.setValueAtTime(0.75 * amount, time + 0.06);
+    g.gain.exponentialRampToValueAtTime(0.001, time + 0.42);
+    osc.connect(g).connect(io.dest);
+    if (io.chain?.rumbleIn) g.connect(io.chain.rumbleIn);
+    osc.start(time);
+    osc.stop(time + 0.45);
+  }
+
+  private playKick(io: LaneIO, time: number, accent = 1) {
     const { ctx, dest } = io;
     const osc = ctx.createOscillator();
     const g = ctx.createGain();
     osc.type = "sine";
     osc.frequency.setValueAtTime(150, time);
     osc.frequency.exponentialRampToValueAtTime(40, time + 0.12);
-    g.gain.setValueAtTime(1, time);
+    g.gain.setValueAtTime(accent, time);
     g.gain.exponentialRampToValueAtTime(0.001, time + 0.4);
     osc.connect(g).connect(dest);
+    if (io.chain?.rumbleIn) g.connect(io.chain.rumbleIn);
     osc.start(time);
     osc.stop(time + 0.45);
   }
@@ -720,18 +965,32 @@ class AudioEngine {
 
   // ------------------------------------------------------- melodic synths
 
-  private playNote(io: LaneIO, midi: number, time: number, duration: number) {
+  private playNote(io: LaneIO, midi: number, time: number, duration: number, marks: Marks) {
     const freq = 440 * Math.pow(2, (midi - 69) / 12);
     const synth = io.lane.synth ?? "piano";
-    if (synth === "piano") this.playPiano(io, freq, time, midi);
-    else if (synth === "bass") this.playBass(io, freq, time);
-    else if (synth === "acid") this.playAcid(io, freq, time, duration);
-    else this.playPad(io, freq, time, duration);
+    const held = duration * (1 + (marks.hold ?? 0));
+    if (synth === "piano") this.playPiano(io, freq, time, midi, marks);
+    else if (synth === "bass") this.playBass(io, freq, time, held, marks);
+    else if (synth === "acid") this.playAcid(io, freq, time, duration, marks);
+    else if (synth === "sub") this.playSub(io, freq, time, held, marks);
+    else if (synth === "reese") this.playReese(io, freq, time, held, marks);
+    else this.playPad(io, freq, time, held, marks);
+  }
+
+  /** A lane's lowpass with its resonance, on a voice (synth-level filter). */
+  private voiceFilter(ctx: BaseAudioContext, fx: LaneFx, cutoff: number): BiquadFilterNode {
+    const filter = ctx.createBiquadFilter();
+    filter.type = "lowpass";
+    filter.frequency.value = cutoff;
+    filter.Q.value = 0.7 + fx.res * 10;
+    return filter;
   }
 
   /** Real sampled piano (pitched via playback rate); triangle-synth fallback. */
-  private playPiano(io: LaneIO, freq: number, time: number, midi: number) {
+  private playPiano(io: LaneIO, freq: number, time: number, midi: number, marks: Marks) {
     const { ctx, dest } = io;
+    const accent = marks.accent ? 1.35 : 1;
+    const hold = 1 + (marks.hold ?? 0);
 
     const sampled = sampleBank.getPitched("piano", midi);
     if (sampled) {
@@ -739,11 +998,11 @@ class AudioEngine {
       source.buffer = sampled.buffer;
       source.playbackRate.value = sampled.rate;
       const g = ctx.createGain();
-      g.gain.setValueAtTime(0.55, time);
-      g.gain.setTargetAtTime(0, time + 1.6, 0.25);
+      g.gain.setValueAtTime(0.55 * accent, time);
+      g.gain.setTargetAtTime(0, time + 1.6 * hold, 0.25);
       source.connect(g).connect(dest);
       source.start(time);
-      source.stop(time + 2.6);
+      source.stop(time + 1.6 * hold + 1.2);
       return;
     }
 
@@ -755,86 +1014,250 @@ class AudioEngine {
     filter.frequency.value = 2500;
     const g = ctx.createGain();
     g.gain.setValueAtTime(0, time);
-    g.gain.linearRampToValueAtTime(0.4, time + 0.005);
-    g.gain.exponentialRampToValueAtTime(0.001, time + 0.8);
+    g.gain.linearRampToValueAtTime(0.4 * accent, time + 0.005);
+    g.gain.exponentialRampToValueAtTime(0.001, time + 0.8 * hold);
     osc.connect(filter).connect(g).connect(dest);
     osc.start(time);
-    osc.stop(time + 0.85);
+    osc.stop(time + 0.85 * hold);
   }
 
-  /** Sawtooth an octave down, dark filter, short punch. */
-  private playBass(io: LaneIO, freq: number, time: number) {
+  /** Sawtooth an octave down with a sine under it, dark filter with a
+   *  short envelope bite, punchy. */
+  private playBass(io: LaneIO, freq: number, time: number, held: number, marks: Marks) {
     const { ctx, dest } = io;
-    const osc = ctx.createOscillator();
-    osc.type = "sawtooth";
-    osc.frequency.value = freq / 2;
-    const filter = ctx.createBiquadFilter();
-    filter.type = "lowpass";
-    filter.frequency.value = 700;
+    const fx = io.lane.fx;
+    const accent = marks.accent ? 1.3 : 1;
+    const saw = ctx.createOscillator();
+    saw.type = "sawtooth";
+    saw.frequency.value = freq / 2;
+    const sine = ctx.createOscillator();
+    sine.type = "sine";
+    sine.frequency.value = freq / 2;
+    const sineGain = ctx.createGain();
+    sineGain.gain.value = 0.5;
+    const cutoff = fx.cutoff ?? 700;
+    const filter = this.voiceFilter(ctx, fx, cutoff);
+    const peak = Math.min(8000, cutoff + (fx.env ?? 0.4) * 1800 * accent);
+    filter.frequency.setValueAtTime(peak, time);
+    filter.frequency.exponentialRampToValueAtTime(cutoff, time + (fx.decay ?? 0.16));
     const g = ctx.createGain();
+    const end = Math.max(0.3, held * 0.9);
     g.gain.setValueAtTime(0, time);
-    g.gain.linearRampToValueAtTime(0.5, time + 0.01);
-    g.gain.exponentialRampToValueAtTime(0.001, time + 0.35);
-    osc.connect(filter).connect(g).connect(dest);
-    osc.start(time);
-    osc.stop(time + 0.4);
-  }
-
-  /** 303-style: sawtooth + squelchy resonant filter sweep + glide. */
-  private playAcid(io: LaneIO, freq: number, time: number, duration: number) {
-    const { ctx, dest, state } = io;
-    const target = freq / 2; // an octave down, like a proper acid bassline
-    const osc = ctx.createOscillator();
-    osc.type = "sawtooth";
-    const from = state.acidFreq ?? target;
-    osc.frequency.setValueAtTime(from, time);
-    if (from !== target) {
-      osc.frequency.exponentialRampToValueAtTime(target, time + Math.min(0.08, duration * 0.4));
-    }
-    state.acidFreq = target;
-
-    const filter = ctx.createBiquadFilter();
-    filter.type = "lowpass";
-    filter.Q.value = 12;
-    filter.frequency.setValueAtTime(2800, time);
-    filter.frequency.exponentialRampToValueAtTime(280, time + 0.18);
-
-    const g = ctx.createGain();
-    const end = Math.max(0.16, duration * 0.95);
-    g.gain.setValueAtTime(0, time);
-    g.gain.linearRampToValueAtTime(0.38, time + 0.004);
+    g.gain.linearRampToValueAtTime(0.5 * accent, time + 0.01);
     g.gain.exponentialRampToValueAtTime(0.001, time + end);
-    osc.connect(filter).connect(g).connect(dest);
-    osc.start(time);
-    osc.stop(time + end + 0.03);
+    saw.connect(filter);
+    sine.connect(sineGain).connect(filter);
+    filter.connect(g).connect(dest);
+    saw.start(time);
+    sine.start(time);
+    saw.stop(time + end + 0.05);
+    sine.stop(time + end + 0.05);
   }
 
-  /** Two detuned saws. The envelope scales with the note: short notes get
-   *  string-like swells, long ambient notes EMERGE instead of hitting —
-   *  and long releases overlap into near-continuous texture. */
-  private playPad(io: LaneIO, freq: number, time: number, duration: number) {
+  /** Pure sine sub: a short pitch drop into the note, long body. */
+  private playSub(io: LaneIO, freq: number, time: number, held: number, marks: Marks) {
     const { ctx, dest } = io;
-    const filter = ctx.createBiquadFilter();
-    filter.type = "lowpass";
-    filter.frequency.value = 1400;
+    const accent = marks.accent ? 1.25 : 1;
+    const target = freq / 2;
+    const osc = ctx.createOscillator();
+    osc.type = "sine";
+    osc.frequency.setValueAtTime(target * 2, time);
+    osc.frequency.exponentialRampToValueAtTime(target, time + 0.04);
     const g = ctx.createGain();
-    const attack = Math.min(1.4, Math.max(0.08, duration * 0.45));
-    const release = Math.min(2.5, Math.max(0.6, duration * 0.7));
+    const end = Math.max(0.35, held * 0.95);
     g.gain.setValueAtTime(0, time);
-    g.gain.linearRampToValueAtTime(0.22, time + attack);
-    g.gain.setValueAtTime(0.22, time + duration);
-    g.gain.exponentialRampToValueAtTime(0.001, time + duration + release);
-    filter.connect(g).connect(dest);
+    g.gain.linearRampToValueAtTime(0.6 * accent, time + 0.006);
+    g.gain.setValueAtTime(0.6 * accent, time + end * 0.5);
+    g.gain.exponentialRampToValueAtTime(0.001, time + end);
+    osc.connect(g).connect(dest);
+    osc.start(time);
+    osc.stop(time + end + 0.05);
+  }
 
-    for (const detune of [-7, 7]) {
+  /** Reese: two detuned saws and a sine an octave under, a slow-breathing
+   *  lowpass — the UK bass. */
+  private playReese(io: LaneIO, freq: number, time: number, held: number, marks: Marks) {
+    const { ctx, dest } = io;
+    const fx = io.lane.fx;
+    const accent = marks.accent ? 1.3 : 1;
+    const cutoff = fx.cutoff ?? 520;
+    const filter = this.voiceFilter(ctx, fx, cutoff);
+    const lfo = ctx.createOscillator();
+    lfo.frequency.value = 0.6;
+    const lfoGain = ctx.createGain();
+    lfoGain.gain.value = cutoff * 0.3;
+    lfo.connect(lfoGain).connect(filter.frequency);
+    const g = ctx.createGain();
+    const end = Math.max(0.3, held * 0.92);
+    g.gain.setValueAtTime(0, time);
+    g.gain.linearRampToValueAtTime(0.3 * accent, time + 0.012);
+    g.gain.setValueAtTime(0.3 * accent, time + end);
+    g.gain.exponentialRampToValueAtTime(0.001, time + end + 0.08);
+    filter.connect(g).connect(dest);
+    const oscs: OscillatorNode[] = [];
+    for (const detune of [-14, 14]) {
+      const osc = ctx.createOscillator();
+      osc.type = "sawtooth";
+      osc.frequency.value = freq / 2;
+      osc.detune.value = detune;
+      osc.connect(filter);
+      oscs.push(osc);
+    }
+    const sine = ctx.createOscillator();
+    sine.type = "sine";
+    sine.frequency.value = freq / 4;
+    const sineGain = ctx.createGain();
+    sineGain.gain.value = 0.6;
+    sine.connect(sineGain).connect(filter);
+    oscs.push(sine, lfo);
+    for (const osc of oscs) {
+      osc.start(time);
+      osc.stop(time + end + 0.15);
+    }
+  }
+
+  /**
+   * The 303: one sawtooth into a resonant ladder filter whose cutoff is
+   * kicked by its own envelope on every note. Accents (`0^`) hit louder,
+   * bite wider and snap faster. A note held with `_` straight into the
+   * next one slides: the voice keeps sounding and glides, nothing retriggers.
+   */
+  private playAcid(io: LaneIO, freq: number, time: number, duration: number, marks: Marks) {
+    const { ctx, dest, state, lane } = io;
+    const fx = lane.fx;
+    // this note was reached by a slide from the previous one: already sounding
+    if (state.slideUntil !== null && Math.abs(time - state.slideUntil) < duration * 0.25) {
+      state.slideUntil = null;
+      return;
+    }
+    const accent = !!marks.accent;
+    const steps = 1 + (marks.hold ?? 0);
+    const target = freq / 2; // an octave down, like a proper acid bassline
+    let gate = marks.hold ? duration * steps - 0.01 : duration * 0.55;
+
+    let slideFreq: number | null = null;
+    if (marks.slide) {
+      const midi =
+        marks.slide.kind === "note"
+          ? marks.slide.midi
+          : degreeToMidi(marks.slide.n, lane.scale ?? SCALES.mayor);
+      slideFreq = (440 * Math.pow(2, (midi - 69) / 12)) / 2;
+      gate = duration * steps + duration * 0.55; // through the next note's gate
+      state.slideUntil = time + duration * steps;
+    }
+
+    const base = fx.cutoff ?? 320;
+    const envAmount = (fx.env ?? 0.65) * (accent ? 1.45 : 1);
+    const decay = (fx.decay ?? 0.28) * (accent ? 0.75 : 1);
+    const peak = Math.min(8800, base + envAmount * 5200);
+    const res = fx.res ?? 0.55;
+
+    const osc = ctx.createOscillator();
+    osc.type = "sawtooth";
+    osc.frequency.setValueAtTime(target, time);
+    if (slideFreq !== null) {
+      const boundary = time + duration * steps;
+      osc.frequency.setValueAtTime(target, boundary - 0.07);
+      osc.frequency.exponentialRampToValueAtTime(slideFreq, boundary + 0.03);
+    }
+
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0, time);
+    g.gain.linearRampToValueAtTime(accent ? 0.55 : 0.36, time + 0.003);
+    g.gain.setValueAtTime(accent ? 0.55 : 0.36, time + gate);
+    g.gain.exponentialRampToValueAtTime(0.001, time + gate + 0.03);
+    const end = time + gate + 0.06;
+
+    if (this.ladderReady.has(ctx)) {
+      const ladder = new AudioWorkletNode(ctx, "ladder", {
+        numberOfInputs: 1,
+        numberOfOutputs: 1,
+        outputChannelCount: [1],
+      });
+      const cutoff = ladder.parameters.get("cutoff")!;
+      cutoff.setValueAtTime(peak, time);
+      cutoff.exponentialRampToValueAtTime(Math.max(50, base), time + decay);
+      ladder.parameters.get("resonance")!.value = 0.3 + res * 0.66;
+      ladder.parameters.get("drive")!.value = 1.3 + res;
+      ladder.port.postMessage({ until: end + 0.5 });
+      osc.connect(ladder).connect(g).connect(dest);
+    } else {
+      // no worklet: two cascaded biquads make 24 dB/oct, close enough
+      const a = this.voiceFilter(ctx, { ...fx, res: res * 0.7 }, base);
+      const b = this.voiceFilter(ctx, { ...fx, res: res * 0.7 }, base);
+      for (const f of [a, b]) {
+        f.frequency.setValueAtTime(peak, time);
+        f.frequency.exponentialRampToValueAtTime(Math.max(50, base), time + decay);
+      }
+      osc.connect(a).connect(b).connect(g).connect(dest);
+    }
+    osc.start(time);
+    osc.stop(end);
+  }
+
+  /** Four detuned saws opened across the stereo field, a slow filter
+   *  breath and a chorus. The envelope scales with the note: short notes
+   *  swell like strings, long ambient notes EMERGE instead of hitting. */
+  private playPad(io: LaneIO, freq: number, time: number, held: number, marks: Marks) {
+    const { ctx, dest } = io;
+    const fx = io.lane.fx;
+    const accent = marks.accent ? 1.3 : 1;
+    const cutoff = fx.cutoff ?? 1400;
+    const filter = this.voiceFilter(ctx, fx, cutoff);
+    const lfo = ctx.createOscillator();
+    lfo.frequency.value = 0.13;
+    const lfoGain = ctx.createGain();
+    lfoGain.gain.value = cutoff * 0.3;
+    lfo.connect(lfoGain).connect(filter.frequency);
+
+    const g = ctx.createGain();
+    const attack = Math.min(1.4, Math.max(0.08, held * 0.45));
+    const release = Math.min(2.5, Math.max(0.6, held * 0.7));
+    g.gain.setValueAtTime(0, time);
+    g.gain.linearRampToValueAtTime(0.13 * accent, time + attack);
+    g.gain.setValueAtTime(0.13 * accent, time + held);
+    g.gain.exponentialRampToValueAtTime(0.001, time + held + release);
+    filter.connect(g);
+    g.connect(dest);
+
+    // chorus: a short delay wobbled by its own LFO, mixed in beside the dry
+    const chorus = ctx.createDelay(0.05);
+    chorus.delayTime.value = 0.017;
+    const wobble = ctx.createOscillator();
+    wobble.frequency.value = 0.35;
+    const wobbleGain = ctx.createGain();
+    wobbleGain.gain.value = 0.0025;
+    wobble.connect(wobbleGain).connect(chorus.delayTime);
+    const chorusMix = ctx.createGain();
+    chorusMix.gain.value = 0.5;
+    g.connect(chorus).connect(chorusMix).connect(dest);
+
+    const left = ctx.createStereoPanner();
+    left.pan.value = -0.35;
+    const right = ctx.createStereoPanner();
+    right.pan.value = 0.35;
+    left.connect(filter);
+    right.connect(filter);
+    const stop = time + held + release + 0.05;
+    const voices: [number, StereoPannerNode][] = [
+      [-12, left],
+      [-5, right],
+      [5, left],
+      [12, right],
+    ];
+    for (const [detune, side] of voices) {
       const osc = ctx.createOscillator();
       osc.type = "sawtooth";
       osc.frequency.value = freq;
       osc.detune.value = detune;
-      osc.connect(filter);
+      osc.connect(side);
       osc.start(time);
-      osc.stop(time + duration + release + 0.05);
+      osc.stop(stop);
     }
+    lfo.start(time);
+    lfo.stop(stop);
+    wobble.start(time);
+    wobble.stop(stop);
   }
 
   // -------------------------------------------------------- effect chains

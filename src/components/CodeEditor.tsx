@@ -24,7 +24,8 @@ import { SCALES, SYNTH_NAMES } from "../lib/parser";
 // ------------------------------------------------------- syntax highlighting
 
 const COMMANDS = [
-  "fast", "slow", "rev", "every", "swing", "lpf", "delay", "reverb", "drive", "room",
+  "fast", "slow", "rev", "every", "swing", "lpf", "hpf", "res", "delay", "reverb", "room",
+  "size", "drive", "duck", "sub", "rumble", "pitch", "cut", "cutoff", "env", "decay",
   "pan", "gain", "synth", "scale", "kit", "bank",
 ];
 const COMMAND_SET = new Set(COMMANDS);
@@ -58,6 +59,7 @@ const language = StreamLanguage.define<{ afterPipe: boolean }>({
       return "bracket";
     }
     if (stream.match(/^~(?:\*\d+|\?)*/)) return "null";
+    if (stream.match(/^_(?=[\s\]>|]|$)/)) return "null"; // tie: holds the previous sound
 
     if (!stream.match(/^[^\s[\]<>|]+/)) {
       stream.next();
@@ -72,7 +74,7 @@ const language = StreamLanguage.define<{ afterPipe: boolean }>({
       return "invalid";
     }
 
-    const base = text.replace(/(\*\d+|\?)+$/, "").split(":")[0].split("(")[0];
+    const base = text.replace(/(\*\d+|\?|\^)+$/, "").split(":")[0].split("(")[0];
     if (SOUND_IDS.has(base) || base in SOUND_ALIASES) return "atom";
     if (/^v[1-8]$/.test(base)) return "atom";
     if (/^[a-g]#?\d?$/.test(base)) return "string";

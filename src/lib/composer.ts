@@ -93,7 +93,7 @@ function motor(rng: Rng): Sketch {
   // kick: constant, sometimes with an alternating double-hit fill
   lanes.push({
     tier: 1,
-    line: `bd${chance(rng, 0.4) ? `:${rint(rng, 0, 3)}` : ""} ~ bd ~ bd ~ ${chance(rng, 0.25) ? "<bd [bd bd]>" : "bd"} ~ | kit 909 | gain 0.9 -- bombo constante`,
+    line: `bd${chance(rng, 0.4) ? `:${rint(rng, 0, 3)}` : ""} ~ bd ~ bd ~ ${chance(rng, 0.25) ? "<bd [bd bd]>" : "bd"} ~ | kit 909 | sub ${rnum(rng, 0.2, 0.35)} | gain 0.9 -- bombo constante`,
   });
 
   // backbeat FAMILY — the clap used to be a byte-for-byte clone across tracks
@@ -157,7 +157,7 @@ function motor(rng: Rng): Sketch {
   lanes.push({
     // half the intros open kick+bass instead of always kick+clap
     tier: chance(rng, 0.5) ? 1 : 2,
-    line: `${riff(rng, pick(rng, bassTemplates), root, [3, 5, 7, -2].filter((d) => d !== root))} | synth bass | scale menor${groove > 0 ? ` | swing ${groove}` : ""} | gain ${rnum(rng, 0.65, 0.75)} -- bajo funk`,
+    line: `${riff(rng, pick(rng, bassTemplates), root, [3, 5, 7, -2].filter((d) => d !== root))} | synth bass | scale menor${groove > 0 ? ` | swing ${groove}` : ""} | duck ${rnum(rng, 0.3, 0.45)} | gain ${rnum(rng, 0.65, 0.75)} -- bajo funk`,
   });
 
   // 4-position progression with a two-level twist: the last chord resolves
@@ -191,11 +191,11 @@ function motor(rng: Rng): Sketch {
   } else {
     lanes.push({
       tier: 2,
-      line: `<${voice(0)}> ~ ~ ~ | synth pad | scale menor | slow 2 | reverb ${rev} | gain ${rnum(rng, 0.5, 0.6)} -- cuerdas: progresión`,
+      line: `<${voice(0)}> ~ ~ ~ | synth pad | scale menor | slow 2 | reverb ${rev} | size 0.6 | duck 0.3 | gain ${rnum(rng, 0.5, 0.6)} -- cuerdas: progresión`,
     });
     lanes.push({
       tier: 3,
-      line: `<${voice(voicing)}> ~ ~ ~ | synth pad | scale menor | slow 2 | reverb ${rev} | gain ${rnum(rng, 0.35, 0.42)} -- cuerdas: armonía`,
+      line: `<${voice(voicing)}> ~ ~ ~ | synth pad | scale menor | slow 2 | reverb ${rev} | size 0.6 | duck 0.3 | gain ${rnum(rng, 0.35, 0.42)} -- cuerdas: armonía`,
     });
   }
 
@@ -257,7 +257,7 @@ function oxidoRodillo(rng: Rng, lanes: Lane[]): number {
   const bpm = rint(rng, 134, 140);
   lanes.push({
     tier: 1,
-    line: `${KICK_4x4} | kit 909 | drive ${rnum(rng, 0.4, 0.55)} | gain 0.9 -- el martillo`,
+    line: `${KICK_4x4} | kit 909 | drive ${rnum(rng, 0.4, 0.55)} | sub ${rnum(rng, 0.3, 0.45)} | rumble ${rnum(rng, 0.2, 0.4)} | gain 0.9 -- el martillo`,
   });
   const tomPan = span(rng, 0.3, 0.5);
   const circle = pick(rng, [
@@ -286,8 +286,8 @@ function oxidoRodillo(rng: Rng, lanes: Lane[]): number {
   lanes.push({
     tier: 1,
     line: chance(rng, 0.5)
-      ? `0 ~ 0 ~ 0 ~ 0 ~ | synth bass | scale menor | lpf ${rint(rng, 250, 350)} | drive 0.4 | gain ${rnum(rng, 0.6, 0.68)} -- sub a pulsos`
-      : `0 ~ 0 ~ 0 ~ <0 1> ~ | synth bass | scale frigia | lpf ${rint(rng, 250, 350)} | drive 0.4 | gain ${rnum(rng, 0.6, 0.68)} -- sub a pulsos, con el roce`,
+      ? `0 ~ 0 ~ 0 ~ 0 ~ | synth bass | scale menor | lpf ${rint(rng, 250, 350)} | drive 0.4 | duck ${rnum(rng, 0.4, 0.6)} | gain ${rnum(rng, 0.6, 0.68)} -- sub a pulsos`
+      : `0 ~ 0 ~ 0 ~ <0 1> ~ | synth bass | scale frigia | lpf ${rint(rng, 250, 350)} | drive 0.4 | duck ${rnum(rng, 0.4, 0.6)} | gain ${rnum(rng, 0.6, 0.68)} -- sub a pulsos, con el roce`,
   });
   if (chance(rng, 0.6)) {
     lanes.push({
@@ -298,7 +298,7 @@ function oxidoRodillo(rng: Rng, lanes: Lane[]): number {
   if (chance(rng, 0.4)) {
     lanes.push({
       tier: 3,
-      line: `0 ~ ~ ~ ~ ~ ~ ~ | synth pad | scale frigia | slow 4 | lpf ${rint(rng, 300, 500)} | drive 0.3 | gain ${rnum(rng, 0.42, 0.5)} -- la losa`,
+      line: `0 ~ ~ ~ ~ ~ ~ ~ | synth pad | scale frigia | slow 4 | lpf ${rint(rng, 300, 500)} | drive 0.3 | duck 0.5 | gain ${rnum(rng, 0.42, 0.5)} -- la losa`,
     });
   }
   return bpm;
@@ -311,7 +311,7 @@ function oxidoHondo(rng: Rng, lanes: Lane[]): number {
   const bpm = rint(rng, 124, 131);
   lanes.push({
     tier: 1,
-    line: `${chance(rng, 0.7) ? KICK_4x4 : "bd ~ bd ~ bd ~ bd [~ bd]"} | kit 909 | drive ${rnum(rng, 0.3, 0.45)} | gain 0.9 -- el martillo, hondo`,
+    line: `${chance(rng, 0.7) ? KICK_4x4 : "bd ~ bd ~ bd ~ bd [~ bd]"} | kit 909 | drive ${rnum(rng, 0.3, 0.45)} | sub ${rnum(rng, 0.35, 0.5)} | rumble ${rnum(rng, 0.3, 0.45)} | gain 0.9 -- el martillo, hondo`,
   });
   const whipPan = span(rng, 0.3, 0.45);
   lanes.push({
@@ -332,11 +332,11 @@ function oxidoHondo(rng: Rng, lanes: Lane[]): number {
   });
   lanes.push({
     tier: 1,
-    line: `<0 1 0 4> ~ ~ ~ ~ ~ ~ ~ | synth pad | scale frigia | slow 4 | lpf ${rint(rng, 700, 1000)} | reverb 0.3 | gain ${rnum(rng, 0.45, 0.52)} -- cuerdas ominosas`,
+    line: `<0 1 0 4> ~ ~ ~ ~ ~ ~ ~ | synth pad | scale frigia | slow 4 | lpf ${rint(rng, 700, 1000)} | reverb 0.3 | size 0.6 | duck ${rnum(rng, 0.4, 0.55)} | gain ${rnum(rng, 0.45, 0.52)} -- cuerdas ominosas`,
   });
   lanes.push({
     tier: 1,
-    line: `${pick(rng, ["0 ~ ~ ~ ~ ~ ~ ~", "0 ~ ~ ~ 0 ~ ~ ~", "0 ~ ~ ~ ~ ~ <0 -3> ~"])} | synth bass | scale frigia | lpf ${rint(rng, 180, 240)} | drive 0.3 | gain ${rnum(rng, 0.6, 0.66)} -- sub`,
+    line: `${pick(rng, ["0 _ _ ~ ~ ~ ~ ~", "0 _ ~ ~ 0 _ ~ ~", "0 _ _ ~ ~ ~ <0 -3> ~"])} | synth sub | scale frigia | duck ${rnum(rng, 0.3, 0.45)} | gain ${rnum(rng, 0.6, 0.66)} -- sub`,
   });
   if (chance(rng, 0.4)) {
     lanes.push({
@@ -353,7 +353,7 @@ function oxidoFundicion(rng: Rng, lanes: Lane[]): number {
   const bpm = chance(rng, 0.2) ? rint(rng, 120, 124) : rint(rng, 130, 138);
   lanes.push({
     tier: 1,
-    line: `${chance(rng, 0.7) ? KICK_4x4 : "bd ~ bd ~ bd ~ bd [~ bd?]"} | kit 909 | drive ${rnum(rng, 0.8, 0.95)} | gain 0.9 -- el martillo al rojo`,
+    line: `${chance(rng, 0.7) ? KICK_4x4 : "bd ~ bd ~ bd ~ bd [~ bd?]"} | kit 909 | drive ${rnum(rng, 0.8, 0.95)} | sub ${rnum(rng, 0.3, 0.5)} | rumble ${rnum(rng, 0.15, 0.3)} | gain 0.9 -- el martillo al rojo`,
   });
   const metalPan = span(rng, 0.3, 0.5);
   lanes.push({
@@ -379,8 +379,8 @@ function oxidoFundicion(rng: Rng, lanes: Lane[]): number {
   lanes.push({
     tier: 1,
     line: chance(rng, 0.6)
-      ? `${pick(rng, ["0 0 ~ 0 ~ <0 1> 0 ~", "0 ~ 0 0 ~ 0 <1 0> ~", "0 0 0 ~ <0 1> 0 ~ ~"])} | synth acid | scale frigia | lpf ${rint(rng, 600, 900)} | drive ${rnum(rng, 0.5, 0.7)} | gain ${rnum(rng, 0.55, 0.62)} -- gancho ácido`
-      : `-7 ~ ~ ~ ~ ~ ~ ~ | synth bass | scale menor | lpf ${rint(rng, 150, 220)} | drive 0.6 | gain ${rnum(rng, 0.6, 0.66)} -- sub de fundición`,
+      ? `${pick(rng, ["0^ 0 ~ 0 _ <0 1> 0 ~", "0 ~ 0^ 0 ~ 0 _ <1 0>", "0^ 0 0 ~ <0 1> 0 _ ~"])} | synth acid | scale frigia | cutoff ${rint(rng, 300, 600)} | res ${rnum(rng, 0.55, 0.8)} | env ${rnum(rng, 0.5, 0.8)} | decay ${rnum(rng, 0.15, 0.35)} | drive ${rnum(rng, 0.5, 0.7)} | duck 0.3 | gain ${rnum(rng, 0.55, 0.62)} -- gancho ácido`
+      : `-7 _ _ ~ ~ ~ ~ ~ | synth sub | scale menor | drive 0.4 | duck 0.35 | gain ${rnum(rng, 0.6, 0.66)} -- sub de fundición`,
   });
   if (chance(rng, 0.4)) {
     lanes.push({
@@ -400,7 +400,7 @@ function oxidoTribal(rng: Rng, lanes: Lane[]): number {
   const broken = chance(rng, 0.35); // the 3+3+2 kick of the soundsystem
   lanes.push({
     tier: 1,
-    line: `${broken ? "bd ~ ~ bd ~ ~ bd ~" : KICK_4x4} | kit 909 | drive ${rnum(rng, 0.4, 0.5)} | gain 0.9 -- el martillo${broken ? ", roto" : ""}`,
+    line: `${broken ? "bd ~ ~ bd ~ ~ bd ~" : KICK_4x4} | kit 909 | drive ${rnum(rng, 0.4, 0.5)} | sub ${rnum(rng, 0.3, 0.45)} | gain 0.9 -- el martillo${broken ? ", roto" : ""}`,
   });
   const tomPan = span(rng, 0.3, 0.5);
   lanes.push({
@@ -426,8 +426,8 @@ function oxidoTribal(rng: Rng, lanes: Lane[]): number {
   lanes.push({
     tier: 1,
     line: chance(rng, 0.5)
-      ? `0 ~ ~ 0 ~ ~ 0 ~ | synth bass | scale penta | lpf ${rint(rng, 260, 340)} | drive 0.4 | gain ${rnum(rng, 0.58, 0.64)} -- bajo en tresillo`
-      : `<-7 -5> ~ ~ ~ ~ ~ ~ ~ | synth pad | scale penta | slow 8 | lpf ${rint(rng, 350, 500)} | drive 0.25 | gain ${rnum(rng, 0.48, 0.54)} -- drone de fondo`,
+      ? `0 ~ ~ 0 ~ ~ 0 ~ | synth bass | scale penta | lpf ${rint(rng, 260, 340)} | drive 0.4 | duck ${rnum(rng, 0.35, 0.5)} | gain ${rnum(rng, 0.58, 0.64)} -- bajo en tresillo`
+      : `<-7 -5> ~ ~ ~ ~ ~ ~ ~ | synth pad | scale penta | slow 8 | lpf ${rint(rng, 350, 500)} | drive 0.25 | duck ${rnum(rng, 0.35, 0.5)} | gain ${rnum(rng, 0.48, 0.54)} -- drone de fondo`,
   });
   if (chance(rng, 0.4)) {
     lanes.push({
@@ -445,7 +445,7 @@ function oxidoMetalico(rng: Rng, lanes: Lane[]): number {
   const groove = rnum(rng, 0.3, 0.4);
   lanes.push({
     tier: 1,
-    line: `${KICK_4x4} | kit 909 | drive ${rnum(rng, 0.4, 0.5)} | gain 0.9 -- el martillo, pesado`,
+    line: `${KICK_4x4} | kit 909 | drive ${rnum(rng, 0.4, 0.5)} | sub ${rnum(rng, 0.35, 0.5)} | rumble ${rnum(rng, 0.2, 0.35)} | gain 0.9 -- el martillo, pesado`,
   });
   const metalPan = span(rng, 0.3, 0.45);
   lanes.push({
@@ -466,12 +466,12 @@ function oxidoMetalico(rng: Rng, lanes: Lane[]): number {
   });
   lanes.push({
     tier: 1,
-    line: `${pick(rng, ["0 0 <0 3> 0 0 <5 0> 0 0", "0 0 0 <3 0> 0 0 0 <0 5>", "0 <0 3> 0 0 <0 5> 0 0 0"])} | synth acid | scale menor | lpf ${rint(rng, 500, 800)} | delay ${rnum(rng, 0.2, 0.25)} | drive 0.45 | gain ${rnum(rng, 0.55, 0.6)} | every 8 rev -- ácido que gruñe`,
+    line: `${pick(rng, ["0^ 0 <0 3> 0 _ 0 <5 0> 0^", "0 0^ 0 <3 0> 0 _ 0 <0 5>", "0^ <0 3> 0 0 <0 5>^ 0 _ 0"])} | synth acid | scale menor | cutoff ${rint(rng, 350, 650)} | res ${rnum(rng, 0.5, 0.75)} | env ${rnum(rng, 0.45, 0.7)} | decay ${rnum(rng, 0.2, 0.4)} | delay ${rnum(rng, 0.2, 0.25)} | drive 0.45 | duck 0.4 | gain ${rnum(rng, 0.55, 0.6)} | every 8 rev -- ácido que gruñe`,
   });
   if (chance(rng, 0.6)) {
     lanes.push({
       tier: 2,
-      line: `-7 ~ ~ ~ ~ ~ ~ ~ | synth bass | scale menor | lpf ${rint(rng, 180, 220)} | drive 0.3 | gain ${rnum(rng, 0.58, 0.62)} -- bajo clavado`,
+      line: `-7 _ _ _ ~ ~ ~ ~ | synth reese | scale menor | cutoff ${rint(rng, 350, 550)} | duck 0.5 | gain ${rnum(rng, 0.5, 0.56)} -- bajo clavado`,
     });
   }
   return bpm;
@@ -483,7 +483,7 @@ function oxidoEje(rng: Rng, lanes: Lane[]): number {
   const bpm = rint(rng, 138, 148);
   lanes.push({
     tier: 1,
-    line: `${KICK_4x4} | kit 909 | drive ${rnum(rng, 0.3, 0.4)} | gain 0.9 -- el martillo, rápido`,
+    line: `${KICK_4x4} | kit 909 | drive ${rnum(rng, 0.3, 0.4)} | sub ${rnum(rng, 0.25, 0.4)} | rumble ${rnum(rng, 0.15, 0.25)} | gain 0.9 -- el martillo, rápido`,
   });
   lanes.push({
     tier: 2,
@@ -503,7 +503,7 @@ function oxidoEje(rng: Rng, lanes: Lane[]): number {
   });
   lanes.push({
     tier: 1,
-    line: `0 ~ 0 ~ 0 ~ 0 ~ | synth bass | scale menor | lpf ${rint(rng, 280, 340)} | drive 0.35 | gain ${rnum(rng, 0.6, 0.64)} -- bajo de una nota`,
+    line: `0 ~ 0 ~ 0 ~ 0 ~ | synth bass | scale menor | lpf ${rint(rng, 280, 340)} | drive 0.35 | duck ${rnum(rng, 0.4, 0.55)} | gain ${rnum(rng, 0.6, 0.64)} -- bajo de una nota`,
   });
   lanes.push({
     tier: 3,
@@ -518,7 +518,7 @@ function oxidoPoligono(rng: Rng, lanes: Lane[]): number {
   const bpm = rint(rng, 132, 138);
   lanes.push({
     tier: 1,
-    line: `${KICK_4x4} | kit 909 | drive ${rnum(rng, 0.45, 0.6)} | gain 0.9 -- el martillo`,
+    line: `${KICK_4x4} | kit 909 | drive ${rnum(rng, 0.45, 0.6)} | sub ${rnum(rng, 0.35, 0.5)} | rumble ${rnum(rng, 0.3, 0.45)} | gain 0.9 -- el martillo`,
   });
   lanes.push({
     tier: 2,
@@ -535,7 +535,7 @@ function oxidoPoligono(rng: Rng, lanes: Lane[]): number {
   const riff = riff_(rng);
   lanes.push({
     tier: 1,
-    line: `${riff} | synth acid | scale ${pick(rng, ["menor", "frigia"])} | lpf ${rint(rng, 600, 1000)} | drive ${rnum(rng, 0.4, 0.55)} | gain ${rnum(rng, 0.56, 0.62)} | every 4 rev -- el estribillo`,
+    line: `${riff} | synth acid | scale ${pick(rng, ["menor", "frigia"])} | cutoff ${rint(rng, 350, 700)} | res ${rnum(rng, 0.5, 0.75)} | env ${rnum(rng, 0.5, 0.75)} | decay ${rnum(rng, 0.2, 0.4)} | drive ${rnum(rng, 0.4, 0.55)} | duck 0.35 | gain ${rnum(rng, 0.56, 0.62)} | every 4 rev -- el estribillo`,
   });
   const percPan = span(rng, 0.3, 0.45);
   lanes.push({
@@ -545,7 +545,7 @@ function oxidoPoligono(rng: Rng, lanes: Lane[]): number {
   if (chance(rng, 0.5)) {
     lanes.push({
       tier: 3,
-      line: `<0 1> ~ ~ ~ ~ ~ ~ ~ | synth pad | scale frigia | slow 4 | lpf ${rint(rng, 400, 700)} | drive 0.25 | gain ${rnum(rng, 0.4, 0.46)} -- niebla de polígono`,
+      line: `<0 1> ~ ~ ~ ~ ~ ~ ~ | synth pad | scale frigia | slow 4 | lpf ${rint(rng, 400, 700)} | drive 0.25 | duck 0.5 | gain ${rnum(rng, 0.4, 0.46)} -- niebla de polígono`,
     });
   }
   return bpm;
@@ -553,7 +553,7 @@ function oxidoPoligono(rng: Rng, lanes: Lane[]): number {
 
 /** an 8-step acid chorus: root insistent, one or two neighbours */
 function riff_(rng: Rng): string {
-  return riff(rng, pick(rng, ["R ~ R X ~ R <X Y> ~", "R R ~ X ~ ~ R <Y ~>", "R ~ X ~ R ~ <X Y> R"]), 0, [1, 3, -2, 5]);
+  return riff(rng, pick(rng, ["R^ ~ R X ~ R _ <X Y>", "R^ R ~ X _ ~ R <Y ~>", "R ~ X^ ~ R _ <X Y> R"]), 0, [1, 3, -2, 5]);
 }
 
 /** ÓXIDO — hard, dry, UK-leaning techno in seven lineages. */
@@ -593,7 +593,7 @@ function casa(rng: Rng): Sketch {
 
   lanes.push({
     tier: 1,
-    line: `bd${chance(rng, 0.3) ? `:${rint(rng, 0, 3)}` : ""} ~ bd ~ bd ~ ${chance(rng, 0.2) ? "<bd [bd bd]>" : "bd"} ~ | kit ${kit} | gain 0.9 -- bombo constante`,
+    line: `bd${chance(rng, 0.3) ? `:${rint(rng, 0, 3)}` : ""} ~ bd ~ bd ~ ${chance(rng, 0.2) ? "<bd [bd bd]>" : "bd"} ~ | kit ${kit} | sub ${rnum(rng, 0.2, 0.3)} | gain 0.9 -- bombo constante`,
   });
   const hoPat = pick(rng, ["~ ho ~ ho", "~ [~ ho] ~ ho", "~ ho ~ ho?"]);
   lanes.push({
@@ -651,7 +651,7 @@ function casa(rng: Rng): Sketch {
   lanes.push({
     // some intros open kick+bass — the house classic
     tier: chance(rng, 0.4) ? 1 : 2,
-    line: `${bass} | synth bass | scale ${scale}${bassSoft} | swing ${groove} | gain ${rnum(rng, 0.65, 0.72)} -- ${bassName}`,
+    line: `${bass} | synth bass | scale ${scale}${bassSoft} | swing ${groove} | duck ${rnum(rng, 0.3, 0.45)} | gain ${rnum(rng, 0.65, 0.72)} -- ${bassName}`,
   });
 
   const prog = pick(rng, [
@@ -703,6 +703,7 @@ function nieblaClasica(rng: Rng): Sketch {
   const bpm = rint(rng, 60, 74);
   const scale = pick(rng, ["menor", "penta", "mayor"]);
   const rev = rnum(rng, 0.6, 0.72);
+  const size = rnum(rng, 0.6, 0.85);
   const lanes: Lane[] = [];
 
   // the seed first decides WHAT KIND of ambient piece this is
@@ -723,12 +724,12 @@ function nieblaClasica(rng: Rng): Sketch {
     if (kind === "grave") {
       lanes.push({
         tier: 1,
-        line: `<${r} ${r + pick(rng, [2, -2, 3, -5])}> ${"~ ".repeat(pick(rng, [2, 3])).trim()} | synth pad | scale ${scale} | slow 8 | lpf ${rint(rng, 400, 700)} | reverb ${rev} | gain ${rnum(rng, 0.5 + soft, 0.6 + soft)} -- suelo grave`,
+        line: `<${r} ${r + pick(rng, [2, -2, 3, -5])}> ${"~ ".repeat(pick(rng, [2, 3])).trim()} | synth pad | scale ${scale} | slow 8 | lpf ${rint(rng, 400, 700)} | reverb ${rev} | size ${size} | gain ${rnum(rng, 0.5 + soft, 0.6 + soft)} -- suelo grave`,
       });
     } else if (kind === "respira") {
       lanes.push({
         tier: 1,
-        line: `<${r} ${r + 2} ${r - 2} ${r + 4}> ~ ~ | synth pad | scale ${scale} | slow 8 | lpf ${rint(rng, 400, 650)} | reverb ${rev} | gain ${rnum(rng, 0.46 + soft, 0.56 + soft)} -- suelo que respira`,
+        line: `<${r} ${r + 2} ${r - 2} ${r + 4}> ~ ~ | synth pad | scale ${scale} | slow 8 | lpf ${rint(rng, 400, 650)} | reverb ${rev} | size ${size} | gain ${rnum(rng, 0.46 + soft, 0.56 + soft)} -- suelo que respira`,
       });
     } else if (kind === "sub") {
       lanes.push({
@@ -738,12 +739,12 @@ function nieblaClasica(rng: Rng): Sketch {
     } else if (kind === "medio") {
       lanes.push({
         tier: 1,
-        line: `<${r + 7} ${r + 5}> ~ ~ ~ | synth pad | scale ${scale} | slow 8 | lpf ${rint(rng, 500, 800)} | reverb ${rev} | gain ${rnum(rng, 0.4 + soft, 0.48 + soft)} -- suelo a media altura`,
+        line: `<${r + 7} ${r + 5}> ~ ~ ~ | synth pad | scale ${scale} | slow 8 | lpf ${rint(rng, 500, 800)} | reverb ${rev} | size ${size} | gain ${rnum(rng, 0.4 + soft, 0.48 + soft)} -- suelo a media altura`,
       });
     } else {
       lanes.push({
         tier: 1,
-        line: `ho ~ ~ ~ ~ | slow 2 | lpf ${rint(rng, 280, 420)} | reverb ${rev} | gain ${rnum(rng, 0.24, 0.3)} -- lecho de aliento`,
+        line: `ho ~ ~ ~ ~ | slow 2 | lpf ${rint(rng, 280, 420)} | reverb ${rev} | size ${size} | gain ${rnum(rng, 0.24, 0.3)} -- lecho de aliento`,
       });
     }
   };
@@ -759,11 +760,11 @@ function nieblaClasica(rng: Rng): Sketch {
     const [midSlow, midRests] = pick(rng, [[4, 3], [8, 4]] as [number, number][]);
     lanes.push({
       tier: 1,
-      line: `<${progStr}> ${"~ ".repeat(midRests).trim()} | synth pad | scale ${scale} | slow ${midSlow} | delay ${rnum(rng, 0.3, 0.45)} | reverb ${rev} | gain ${rnum(rng, 0.42, 0.5)} -- bruma media`,
+      line: `<${progStr}> ${"~ ".repeat(midRests).trim()} | synth pad | scale ${scale} | slow ${midSlow} | delay ${rnum(rng, 0.3, 0.45)} | reverb ${rev} | size ${size} | gain ${rnum(rng, 0.42, 0.5)} -- bruma media`,
     });
     lanes.push({
       tier: 2,
-      line: `${offsetLane(`<${pick(rng, [7, 9])} ${pick(rng, [11, 12])}>${chance(rng, 0.35) ? "?" : ""}`, rint(rng, 1, 3), pick(rng, [5, 7]))} | synth pad | scale ${scale} | slow 4 | reverb ${rev} | pan ${span(rng, 0.25, 0.5)} | gain ${rnum(rng, 0.3, 0.38)} -- bruma alta, desplazada`,
+      line: `${offsetLane(`<${pick(rng, [7, 9])} ${pick(rng, [11, 12])}>${chance(rng, 0.35) ? "?" : ""}`, rint(rng, 1, 3), pick(rng, [5, 7]))} | synth pad | scale ${scale} | slow 4 | reverb ${rev} | size ${size} | pan ${span(rng, 0.25, 0.5)} | gain ${rnum(rng, 0.3, 0.38)} -- bruma alta, desplazada`,
     });
     if (chance(rng, 0.4)) {
       lanes.push({
@@ -800,7 +801,7 @@ function nieblaClasica(rng: Rng): Sketch {
       .join(" ");
     lanes.push({
       tier: 1,
-      line: `${offsetLane(`<${progStr}>`, rint(rng, 1, 2), pick(rng, [5, 6]))} | synth pad | scale ${scale} | slow 4 | delay ${rnum(rng, 0.3, 0.5)} | reverb ${rev} | gain ${rnum(rng, 0.45, 0.55)} -- bruma, desplazada`,
+      line: `${offsetLane(`<${progStr}>`, rint(rng, 1, 2), pick(rng, [5, 6]))} | synth pad | scale ${scale} | slow 4 | delay ${rnum(rng, 0.3, 0.5)} | reverb ${rev} | size ${size} | gain ${rnum(rng, 0.45, 0.55)} -- bruma, desplazada`,
     });
     lanes.push({
       tier: 2,
@@ -820,13 +821,13 @@ function nieblaClasica(rng: Rng): Sketch {
     } else {
       lanes.push({
         tier: 1,
-        line: `<-7 -5> ~ <-9 ${pick(rng, ["-7", "-12"])}> ~ ~ | synth pad | scale ${scale} | slow 8 | lpf ${rint(rng, 400, 700)} | reverb ${rev} | gain ${rnum(rng, 0.48, 0.56)} -- suelo que camina`,
+        line: `<-7 -5> ~ <-9 ${pick(rng, ["-7", "-12"])}> ~ ~ | synth pad | scale ${scale} | slow 8 | lpf ${rint(rng, 400, 700)} | reverb ${rev} | size ${size} | gain ${rnum(rng, 0.48, 0.56)} -- suelo que camina`,
       });
     }
     const chord = `<0 <${pick(rng, [2, 4])} ${pick(rng, [5, 7])}>>`;
     lanes.push({
       tier: 1,
-      line: `${offsetLane(chord, rint(rng, 1, 2), pick(rng, [5, 7]))} | synth pad | scale ${scale} | slow 4 | delay ${rnum(rng, 0.35, 0.5)} | reverb ${rev} | gain ${rnum(rng, 0.42, 0.5)} -- bruma, desplazada`,
+      line: `${offsetLane(chord, rint(rng, 1, 2), pick(rng, [5, 7]))} | synth pad | scale ${scale} | slow 4 | delay ${rnum(rng, 0.35, 0.5)} | reverb ${rev} | size ${size} | gain ${rnum(rng, 0.42, 0.5)} -- bruma, desplazada`,
     });
     const hoPan = span(rng, 0.25, 0.5);
     lanes.push({
@@ -868,7 +869,7 @@ function nieblaAeropuertos(rng: Rng, lanes: Lane[]): number {
     const synth = i === 3 ? "piano" : "pad";
     lanes.push({
       tier: i < 2 ? 1 : i === 2 ? 2 : 3,
-      line: `${tape(voice, length, rint(rng, 0, length - 1))} | synth ${synth} | scale ${scale} | slow 4 | lpf ${rint(rng, 2000, 4000)} | delay ${rnum(rng, 0.3, 0.4)} | reverb ${rev} | pan ${span(rng, 0.2, 0.5)} | gain ${rnum(rng, 0.36, 0.46)} -- cinta ${length}`,
+      line: `${tape(voice, length, rint(rng, 0, length - 1))} | synth ${synth} | scale ${scale} | slow 4 | lpf ${rint(rng, 2000, 4000)} | delay ${rnum(rng, 0.3, 0.4)} | reverb ${rev} | size 0.8 | pan ${span(rng, 0.2, 0.5)} | gain ${rnum(rng, 0.36, 0.46)} -- cinta ${length}`,
     });
   });
   lanes.push({
@@ -893,7 +894,7 @@ function nieblaCoro(rng: Rng, lanes: Lane[]): number {
   voices.forEach((voice, i) => {
     lanes.push({
       tier: i < 2 ? 1 : 2,
-      line: `${tape(voice, lengths[i], i === 0 ? 0 : rint(rng, 1, 4))} | synth pad | scale mayor | slow 8 | lpf ${lpf + i * 300} | reverb ${rev} | pan ${i === 0 ? 0 : span(rng, 0.25, 0.45)} | gain ${rnum(rng, 0.42, 0.5) - i * 0.05} -- ${i === 0 ? "suelo coral" : i === 1 ? "voz media" : "voz alta"}`,
+      line: `${tape(voice, lengths[i], i === 0 ? 0 : rint(rng, 1, 4))} | synth pad | scale mayor | slow 8 | lpf ${lpf + i * 300} | reverb ${rev} | size 0.95 | pan ${i === 0 ? 0 : span(rng, 0.25, 0.45)} | gain ${rnum(rng, 0.42, 0.5) - i * 0.05} -- ${i === 0 ? "suelo coral" : i === 1 ? "voz media" : "voz alta"}`,
     });
   });
   if (chance(rng, 0.6)) {
@@ -941,15 +942,15 @@ function nieblaEnterrado(rng: Rng, lanes: Lane[]): number {
   const rev = rnum(rng, 0.85, 0.92);
   lanes.push({
     tier: 1,
-    line: `${KICK_4x4} | lpf ${rint(rng, 200, 350)} | reverb 0.3 | gain ${rnum(rng, 0.4, 0.48)} -- latido enterrado`,
+    line: `${KICK_4x4} | lpf ${rint(rng, 200, 350)} | sub 0.3 | reverb 0.3 | size 0.7 | gain ${rnum(rng, 0.4, 0.48)} -- latido enterrado`,
   });
   lanes.push({
     tier: 1,
-    line: `<0 -2> ~ ~ ~ ~ ~ ~ ~ | synth pad | scale menor | slow 8 | lpf ${rint(rng, 800, 1500)} | reverb ${rev} | gain ${rnum(rng, 0.46, 0.54)} -- bruma de bosque`,
+    line: `<0 -2> ~ ~ ~ ~ ~ ~ ~ | synth pad | scale menor | slow 8 | lpf ${rint(rng, 800, 1500)} | reverb ${rev} | size 0.9 | gain ${rnum(rng, 0.46, 0.54)} -- bruma de bosque`,
   });
   lanes.push({
     tier: 2,
-    line: `${tape(pick(rng, ["<-5 -7>", "<2 -5>", "-3"]), 12, rint(rng, 1, 5))} | synth pad | scale menor | slow 8 | lpf ${rint(rng, 600, 1100)} | reverb ${rev} | pan ${span(rng, 0.25, 0.45)} | gain ${rnum(rng, 0.36, 0.44)} -- bruma, más lejos`,
+    line: `${tape(pick(rng, ["<-5 -7>", "<2 -5>", "-3"]), 12, rint(rng, 1, 5))} | synth pad | scale menor | slow 8 | lpf ${rint(rng, 600, 1100)} | reverb ${rev} | size 0.9 | pan ${span(rng, 0.25, 0.45)} | gain ${rnum(rng, 0.36, 0.44)} -- bruma, más lejos`,
   });
   lanes.push({
     tier: 2,
@@ -971,11 +972,11 @@ function nieblaCinta(rng: Rng, lanes: Lane[]): number {
   const scale = pick(rng, ["menor", "dorica"]);
   lanes.push({
     tier: 1,
-    line: `${pick(rng, ["0 ~ 3 ~ ~ 5? ~ 7", "7 ~ ~ 5 ~ 3? ~ ~", "0 ~ ~ 7 ~ <5 3> ~ 3?"])} | synth piano | scale ${scale} | slow 4 | lpf ${rint(rng, 800, 2000)} | delay ${rnum(rng, 0.45, 0.55)} | reverb ${rnum(rng, 0.75, 0.85)} | gain ${rnum(rng, 0.42, 0.5)} -- la frase, gastada`,
+    line: `${pick(rng, ["0 ~ 3 ~ ~ 5? ~ 7", "7 ~ ~ 5 ~ 3? ~ ~", "0 ~ ~ 7 ~ <5 3> ~ 3?"])} | synth piano | scale ${scale} | slow 4 | lpf ${rint(rng, 800, 2000)} | delay ${rnum(rng, 0.45, 0.55)} | reverb ${rnum(rng, 0.75, 0.85)} | size 0.75 | gain ${rnum(rng, 0.42, 0.5)} -- la frase, gastada`,
   });
   lanes.push({
     tier: 2,
-    line: `${tape(pick(rng, ["<7 5>", "<5 3>", "<7 10>"]), 5, rint(rng, 0, 4))} | synth pad | scale ${scale} | slow 3 | lpf ${rint(rng, 600, 1000)} | reverb ${rnum(rng, 0.75, 0.85)} | pan ${span(rng, 0.3, 0.5)} | gain ${rnum(rng, 0.3, 0.38)} -- contramelodía sin sincronizar`,
+    line: `${tape(pick(rng, ["<7 5>", "<5 3>", "<7 10>"]), 5, rint(rng, 0, 4))} | synth pad | scale ${scale} | slow 3 | lpf ${rint(rng, 600, 1000)} | reverb ${rnum(rng, 0.75, 0.85)} | size 0.75 | pan ${span(rng, 0.3, 0.5)} | gain ${rnum(rng, 0.3, 0.38)} -- contramelodía sin sincronizar`,
   });
   lanes.push({
     tier: 1,
@@ -1004,7 +1005,7 @@ function nieblaSecuencia(rng: Rng, lanes: Lane[]): number {
   });
   lanes.push({
     tier: 1,
-    line: `<-7 -5> ~ ~ ~ ~ ~ ~ ~ | synth pad | scale ${scale} | slow 8 | lpf ${rint(rng, 350, 600)} | reverb ${rnum(rng, 0.65, 0.75)} | gain ${rnum(rng, 0.44, 0.52)} -- suelo de secuencia`,
+    line: `<-7 -5> ~ ~ ~ ~ ~ ~ ~ | synth pad | scale ${scale} | slow 8 | lpf ${rint(rng, 350, 600)} | reverb ${rnum(rng, 0.65, 0.75)} | size 0.7 | gain ${rnum(rng, 0.44, 0.52)} -- suelo de secuencia`,
   });
   lanes.push({
     tier: 2,
@@ -1030,15 +1031,15 @@ function nieblaGlaciar(rng: Rng, lanes: Lane[]): number {
   });
   lanes.push({
     tier: 1,
-    line: `${tape(pick(rng, ["<0 1>", "<0 -1>", "<1 0>"]), 9, rint(rng, 0, 3))} | synth pad | scale frigia | slow 8 | lpf ${rint(rng, 300, 900)} | reverb ${rev} | drive ${rnum(rng, 0.15, 0.25)} | gain ${rnum(rng, 0.42, 0.5)} -- el roce`,
+    line: `${tape(pick(rng, ["<0 1>", "<0 -1>", "<1 0>"]), 9, rint(rng, 0, 3))} | synth pad | scale frigia | slow 8 | lpf ${rint(rng, 300, 900)} | reverb ${rev} | size 0.95 | drive ${rnum(rng, 0.15, 0.25)} | gain ${rnum(rng, 0.42, 0.5)} -- el roce`,
   });
   lanes.push({
     tier: 2,
-    line: `${tape(pick(rng, ["<7 ~>", "7?", "<7 6>"]), 11, rint(rng, 2, 8))} | synth pad | scale frigia | slow 8 | lpf ${rint(rng, 500, 1200)} | reverb ${rev} | pan ${span(rng, 0.3, 0.5)} | gain ${rnum(rng, 0.3, 0.38)} -- luz lejana`,
+    line: `${tape(pick(rng, ["<7 ~>", "7?", "<7 6>"]), 11, rint(rng, 2, 8))} | synth pad | scale frigia | slow 8 | lpf ${rint(rng, 500, 1200)} | reverb ${rev} | size 0.95 | pan ${span(rng, 0.3, 0.5)} | gain ${rnum(rng, 0.3, 0.38)} -- luz lejana`,
   });
   lanes.push({
     tier: 2,
-    line: `ho ~ ~ ~ ~ ~ ~ | slow 2 | lpf ${rint(rng, 250, 400)} | reverb ${rev} | pan ${span(rng, 0.2, 0.4)} | gain ${rnum(rng, 0.16, 0.22)} -- viento`,
+    line: `ho ~ ~ ~ ~ ~ ~ | slow 2 | lpf ${rint(rng, 250, 400)} | reverb ${rev} | size 0.95 | pan ${span(rng, 0.2, 0.4)} | gain ${rnum(rng, 0.16, 0.22)} -- viento`,
   });
   lanes.push({
     tier: 3,
@@ -1055,11 +1056,11 @@ function nieblaDub(rng: Rng, lanes: Lane[]): number {
   const delay = rnum(rng, 0.6, 0.8);
   lanes.push({
     tier: 1,
-    line: `bd ~ ~ ~ bd ~ ~ ~ | lpf ${rint(rng, 220, 300)} | reverb 0.3 | gain ${rnum(rng, 0.4, 0.46)} -- latido dub`,
+    line: `bd ~ ~ ~ bd ~ ~ ~ | lpf ${rint(rng, 220, 300)} | sub 0.35 | reverb 0.3 | size 0.7 | gain ${rnum(rng, 0.4, 0.46)} -- latido dub`,
   });
   lanes.push({
     tier: 1,
-    line: `${tape(pick(rng, ["<0 2>", "<0 -2>", "0"]), 6, rint(rng, 1, 3))} | synth pad | scale ${scale} | slow 2 | lpf ${rint(rng, 800, 1500)} | delay ${delay} | reverb ${rnum(rng, 0.65, 0.75)} | pan ${span(rng, 0.25, 0.4)} | gain ${rnum(rng, 0.42, 0.5)}${chance(rng, 0.5) ? " | every 2 rev" : ""} -- acorde ahogado`,
+    line: `${tape(pick(rng, ["<0 2>", "<0 -2>", "0"]), 6, rint(rng, 1, 3))} | synth pad | scale ${scale} | slow 2 | lpf ${rint(rng, 800, 1500)} | delay ${delay} | reverb ${rnum(rng, 0.65, 0.75)} | size 0.85 | pan ${span(rng, 0.25, 0.4)} | gain ${rnum(rng, 0.42, 0.5)}${chance(rng, 0.5) ? " | every 2 rev" : ""} -- acorde ahogado`,
   });
   lanes.push({
     tier: 1,

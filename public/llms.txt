@@ -39,8 +39,10 @@ Silent if the slot is empty. No variants (no `v1:2`).
   `0 2 4 7` in scale mayor = C E G C5. Degrees can't play out of tune.
 - Scales (via `| scale X`): mayor (default), menor, penta, dorica, frigia, lidia.
   English aliases: major, minor, pentatonic, dorian, phrygian, lydian.
-- Instruments (via `| synth X`): piano (sampled), bass, pad, acid (TB-303 style,
-  plays one octave down with glide between consecutive notes). Default: piano.
+- Instruments (via `| synth X`): piano (sampled), bass (saw + sine, filter
+  bite), pad (4 detuned saws, chorus), acid (TB-303: ladder filter, accents,
+  slides; plays one octave down), sub (pure sine), reese (detuned saws, the
+  UK bass). Default: piano.
 
 ## Mini-notation (composable and nestable, same symbols as Tidal/Strudel)
 
@@ -51,8 +53,12 @@ a?       50% probability each time
 a(k,n)   euclidean rhythm: k hits spread evenly over n steps (expands in
          place to n steps; k<=n<=32). E.g. bd(3,8) = x..x..x.
 a:v      sample variant (drums only)
+a^       accent: louder; on the acid also a wider, snappier filter bite
+_        tie: the previous sound lasts one more step. On the acid, a note
+         held with `_` straight into the next note SLIDES into it (303):
+         `0 _ 3 ~ 0^ 0 _ 12` = root held and gliding to 3, accent, slide up.
 
-Combinable: `[bd hh]*2`, `<sn cp>?`, `v1(3,8)`, `[c e] <g b3>?`
+Combinable: `[bd hh]*2`, `<sn cp>?`, `v1(3,8)`, `[c e] <g b3>?`, `0^ _ 3`
 
 ## Line commands (appended after `|`, chainable: `bd ~ | kit 808 | gain 0.8`)
 
@@ -62,12 +68,25 @@ Combinable: `[bd hh]*2`, `<sn cp>?`, `v1(3,8)`, `[c e] <g b3>?`
 | every N rev  every Nth loop the lane plays reversed (N 2-16)
 | swing X      delays even-numbered steps for groove (0-1)
 | lpf F        low-pass filter cutoff in Hz (100-12000)
+| hpf F        high-pass filter in Hz (20-8000)
+| res X        resonance of the lane's lpf and of the synth filter (0-1)
 | delay X      musical echo send, dotted-eighth time (0-1)
 | reverb X     reverb send (0-1). Alias: room X
+| size X       reverb size, small room 0 … cathedral 1 (default 0.35)
 | drive X      soft-clip distortion (0-1)
+| duck X       sidechain: the lane dips by X on EVERY kick in the pattern
+               (any lane's bd) and recovers within the step (0-1)
+| sub X        kick only: sine sub layer under each bd (0-1)
+| rumble X     kick only: long dark reverb tail under each bd, ducked by the
+               kick itself — the Berlin rumble (0-1)
+| pitch N      retune the lane's samples in semitones (-24..24)
+| cut S        cut each sample after S seconds (0.01-4), e.g. short hats
+| cutoff F     synth voices: filter cutoff in Hz (50-8000)
+| env X        synth voices: how far the envelope opens the filter (0-1)
+| decay S      synth voices: filter envelope decay in seconds (0.02-2)
 | pan X        stereo position (-1 left … 1 right)
 | gain X       lane volume (0-2)
-| synth NAME   piano | bass | pad | acid   (melodic lanes)
+| synth NAME   piano | bass | pad | acid | sub | reese   (melodic lanes)
 | scale NAME   mayor | menor | penta | dorica | frigia | lidia   (degree lanes)
 | kit NAME     drum machine: 808 (Roland TR-808), 909 (TR-909), linn (LinnDrum).
                Remaps bd/sn/hh/etc to that machine's real samples.
@@ -94,6 +113,9 @@ https://bakaluti.com/#p=<base64url(utf8 pattern)>&b=<bpm>
 - Lanes of different lengths create polymeter (e.g. a 3-step against a 4-step).
 - Chords: two pad lanes in parallel degrees, e.g.
   `<0 5> ~ ~ ~ | synth pad | slow 2` + `<2 7> ~ ~ ~ | synth pad | slow 2 | gain 0.7`
+- Techno weight: `bd ~ bd ~ | kit 909 | sub 0.4 | rumble 0.3`, then `| duck 0.5`
+  on the bass and pads so the kick makes room for itself.
+- Acid: `0^ _ 3 ~ 0 0 _ 12 ~ | synth acid | cutoff 400 | res 0.7 | env 0.7 | decay 0.3 | drive 0.3`
 
 ## Complete example
 

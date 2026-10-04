@@ -10,8 +10,9 @@ DSL (cada línea = una capa que suena en bucle a la vez que las demás):
 - Sonidos separados por espacios. ~ = un paso de silencio. Una línea hecha solo de ~ NO SUENA NADA y está prohibida: toda línea lleva al menos un sonido o nota (ambient lento = notas largas con slow, p.ej. -7 ~ ~ ~, NUNCA solo ~).
 - Percusión: bd (bombo) sn (caja) hh (hat cerrado) ho (hat abierto) cp (palmada) rm (rim) cb (cencerro) mt lt ht (toms). Variantes: bd:3, sn:7.
 - [a b] = dos golpes en un paso · <a b> = alterna en cada vuelta (anidable) · hh*2 = repite · hh? = suena a veces · bd(3,8) = 3 golpes repartidos en 8 pasos.
-- Melodía: grados de escala (0 tónica, 7 octava, negativos graves) + | synth piano|bass|pad|acid + | scale mayor|menor|penta|dorica|frigia|lidia.
-- Trucos al final con |: fast 2 · slow 2 · rev · every 4 rev · swing 0.3 · lpf 800 · delay 0.4 · reverb 0.4 · drive 0.5 · pan -0.5 · gain 0.8 · kit 808|909|linn.
+- Melodía: grados de escala (0 tónica, 7 octava, negativos graves) + | synth piano|bass|pad|acid|sub|reese + | scale mayor|menor|penta|dorica|frigia|lidia.
+- Trucos al final con |: fast 2 · slow 2 · rev · every 4 rev · swing 0.3 · lpf 800 · hpf 200 · res 0.6 · delay 0.4 · reverb 0.4 · size 0.8 · drive 0.5 · pan -0.5 · gain 0.8 · kit 808|909|linn.
+- Peso de techno: en el bombo | sub 0.4 | rumble 0.3; en bajo y pads | duck 0.5 (sidechain). Ácido 303: 0^ = acento, _ = liga/slide hacia la siguiente nota, p.ej. 0^ _ 3 ~ 0 0 _ 12 ~ | synth acid | cutoff 400 | res 0.7 | env 0.7 | decay 0.3.
 - -- comentario al final de cada línea.
 
 FORMATO DE RESPUESTA:
