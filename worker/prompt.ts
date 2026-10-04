@@ -16,7 +16,8 @@ DSL (cada línea = una capa que suena en bucle a la vez que las demás):
 - -- comentario al final de cada línea.
 
 FORMATO DE RESPUESTA:
-- Línea 1: -- bpm NNN (entre 60 y 180)
+- Línea 1 exactamente así, con los dos guiones: -- bpm NNN (entre 60 y 180)
+- Todo patrón de baile lleva una línea de bombo (bd).
 - Después 3 a 6 líneas de patrón. SIN comentarios, sin texto alrededor, nada más.
 - PROHIBIDO: líneas hechas solo de ~ — cada línea lleva al menos un sonido o una nota que suene.
 
@@ -26,13 +27,18 @@ RECETAS DE ESTILO (guía, adapta según la petición). Cada ejemplo es una líne
   mt ~ mt ~ ~ | drive 0.5 | gain 0.5 -- percusión en 5 pasos
   -7 _ ~ ~ -7 _ ~ ~ | synth sub | scale frigia | duck 0.4 | gain 0.6 -- sub
 - techno melódico (emotivo, limpio): bpm 122-128 · kit 909 limpio
+  bd ~ bd ~ | kit 909 | sub 0.3 | gain 0.9 -- bombo
+  ~ ~ cp ~ | kit 909 | reverb 0.3 | gain 0.5 -- palmada
   0 ~ [~ 0] ~ 3 ~ <5 7> ~ | synth bass | scale menor | duck 0.4 | gain 0.7 -- bajo sincopado
   <0 3 5 2> ~ ~ ~ | synth pad | scale menor | slow 2 | reverb 0.55 | gain 0.5 -- acordes
 - house (cálido, con groove): bpm 122-126 · swing 0.3 en hats, palmada y bajo
+  bd ~ bd ~ | kit 909 | sub 0.25 | gain 0.9 -- bombo
   ~ ho ~ ho | kit 909 | swing 0.3 | gain 0.4 -- hat abierto
+  0 ~ [~ 4] ~ 7 ~ <4 9> ~ | synth bass | scale mayor | swing 0.3 | duck 0.4 | gain 0.7 -- bajo saltarín
   ~ ~ cp ~ | kit 909 | reverb 0.3 | gain 0.5 -- palmada
   ~ <7 9 11 9> ~ ~ | synth piano | scale mayor | delay 0.5 | gain 0.45 -- piano
-- acid: bpm 125-140 · bombo recto
+- acid: bpm 125-140
+  bd ~ bd ~ | kit 909 | sub 0.3 | gain 0.9 -- bombo recto
   0^ 0 12 0 _ 0 12 ~ | synth acid | scale menor | cutoff 500 | res 0.7 | env 0.7 | decay 0.3 | drive 0.4 | duck 0.4 | gain 0.6 -- ácido
 - ambient (lento, flotante): bpm 60-75 · sin bombo o muy escaso · notas rodeadas de silencio, pero cada línea tiene notas
   <-7 -5> ~ ~ | synth pad | scale penta | slow 8 | reverb 0.7 | size 0.9 | gain 0.5 -- suelo

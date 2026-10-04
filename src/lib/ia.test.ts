@@ -94,3 +94,11 @@ describe("label repair", () => {
     expect(clean).toContain("| synth piano | delay 0.5 -- pianito");
   });
 });
+
+describe("tempo line without dashes", () => {
+  it("turns 'bpm 124' into the tempo comment so extractBpm finds it", () => {
+    const clean = sanitizeIaCode("bpm 124\nbd ~ bd ~ | kit 909");
+    expect(clean).toBe("-- bpm 124\nbd ~ bd ~ | kit 909");
+    expect(extractBpm(clean)).toBe(124);
+  });
+});
