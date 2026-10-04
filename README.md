@@ -186,6 +186,12 @@ y revisiones a ciegas de un agente crítico independiente.
 
 ![bakaluti FM reproduciendo un tema generado, con su partitura en directo](docs/fm.png)
 
+El botón **● grabar este tema** renderiza el tema en antena como una grabación
+de 3 a 5 minutos con intro, cuerpo, salida y fundido, lista para subir. Los
+singles de la emisora están en SoundCloud; el primero,
+[Nave 7](https://soundcloud.com/makinavaja909/nave-7), es techno ácido hipnótico
+escrito en ocho líneas que cualquiera puede abrir y remezclar.
+
 ## La residente: pídele un ritmo 🎧
 
 Pestaña **Residente**: la DJ residente de la casa. Le pides en lenguaje
