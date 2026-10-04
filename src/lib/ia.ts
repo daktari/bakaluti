@@ -53,6 +53,12 @@ export function sanitizeIaCode(raw: string): string {
   const kept: string[] = [];
   for (const line of lines) {
     const trimmed = line.trim();
+    // "bpm 124" without the dashes is the tempo line, not a pattern
+    const tempo = trimmed.match(/^bpm\s*:?\s*(\d{2,3})\s*$/i);
+    if (tempo) {
+      kept.push(`-- bpm ${tempo[1]}`);
+      continue;
+    }
     if (trimmed === "" || trimmed.startsWith("--")) {
       kept.push(line);
       continue;
