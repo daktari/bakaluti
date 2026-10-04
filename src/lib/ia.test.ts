@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { diffPatterns, extractBpm, playableSlice, sanitizeIaCode } from "./ia";
+import { diffPatterns, extractBpm, playableSlice, sanitizeIaCode, sseDelta } from "./ia";
 
 describe("IA output sanitizer", () => {
   it("keeps a clean pattern untouched", () => {
@@ -44,5 +44,26 @@ describe("IA output sanitizer", () => {
     expect(extractBpm("-- BPM 999\nbd")).toBe(180);
     expect(extractBpm("-- bpm 10\nbd")).toBe(60);
     expect(extractBpm("bd bd bd bd")).toBeUndefined();
+  });
+});
+
+describe("SSE delta parsing", () => {
+  it("reads Workers AI and OpenAI shapes", () => {
+    expect(sseDelta('{"response":" bpm"}')).toBe(" bpm");
+    expect(sseDelta('{"choices":[{"delta":{"content":"bd"}}]}')).toBe("bd");
+  });
+
+  it("keeps digits that Workers AI serialises as JSON numbers", () => {
+    // real production payload: the token "0" arrives as the number 0
+    expect(sseDelta('{"response":0,"tool_calls":[],"p":"abdef"}')).toBe("0");
+    expect(sseDelta('{"response":9}')).toBe("9");
+    const stream = ['"--"', '" bpm"', '" "', "1", "4", "0"].map((d) => `{"response":${d}}`);
+    expect(stream.map(sseDelta).join("")).toBe("-- bpm 140");
+  });
+
+  it("ignores payloads without text and torn JSON", () => {
+    expect(sseDelta('{"response":"","usage":{"neurons":70}}')).toBe("");
+    expect(sseDelta('{"tool_calls":[],"p":"ab"}')).toBeNull();
+    expect(sseDelta('{"response":"bd')).toBeNull();
   });
 });
