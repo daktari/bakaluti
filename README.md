@@ -124,7 +124,7 @@ una batería real.
 - Notas: `c d e f g a b` (do–si), `c5` = más aguda, `c#` = sostenido.
 - Peldaños: `0 2 4 7` — números sobre una escala; imposible desafinar.
 - `| synth piano` (o `bass`, `pad`) elige el instrumento.
-- `| scale menor` (o `mayor`, `penta`) elige la escala de los peldaños.
+- `| scale menor` (o `mayor`, `penta`, `dorica`, `frigia`, `lidia`) elige la escala de los peldaños.
 
 ```
 c e g <c5 b> | synth piano

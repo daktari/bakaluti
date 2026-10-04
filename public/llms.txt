@@ -37,8 +37,8 @@ Silent if the slot is empty. No variants (no `v1:2`).
   (default octave 4). Examples: `c` (= C4, midi 60), `c#`, `e5`, `b3`.
 - Scale degrees: integers `-99..99` mapped onto a scale rooted at C4.
   `0 2 4 7` in scale mayor = C E G C5. Degrees can't play out of tune.
-- Scales (via `| scale X`): mayor (default), menor, penta.
-  English aliases: major, minor, pentatonic.
+- Scales (via `| scale X`): mayor (default), menor, penta, dorica, frigia, lidia.
+  English aliases: major, minor, pentatonic, dorian, phrygian, lydian.
 - Instruments (via `| synth X`): piano (sampled), bass, pad, acid (TB-303 style,
   plays one octave down with glide between consecutive notes). Default: piano.
 
@@ -68,7 +68,7 @@ Combinable: `[bd hh]*2`, `<sn cp>?`, `v1(3,8)`, `[c e] <g b3>?`
 | pan X        stereo position (-1 left … 1 right)
 | gain X       lane volume (0-2)
 | synth NAME   piano | bass | pad | acid   (melodic lanes)
-| scale NAME   mayor | menor | penta        (degree lanes)
+| scale NAME   mayor | menor | penta | dorica | frigia | lidia   (degree lanes)
 | kit NAME     drum machine: 808 (Roland TR-808), 909 (TR-909), linn (LinnDrum).
                Remaps bd/sn/hh/etc to that machine's real samples.
                Strudel-style alias: | bank RolandTR808 / RolandTR909 / LinnDrum
