@@ -20,14 +20,30 @@ FORMATO DE RESPUESTA:
 - Después 3 a 6 líneas de patrón. SIN comentarios, sin texto alrededor, nada más.
 - PROHIBIDO: líneas hechas solo de ~ — cada línea lleva al menos un sonido o una nota que suene.
 
-RECETAS DE ESTILO (guía, adapta según la petición):
-- techno industrial (duro, seco): bpm 135-145 · bd ~ bd ~ | kit 909 | drive 0.6 | gain 0.9 · percusión en 5 o 7 pasos (mt ~ mt ~ ~) · sin reverb ni delay · bajo grave | lpf 300 | drive 0.5.
-- techno melódico (emotivo, limpio): bpm 122-128 · kit 909 · bajo sincopado 0 ~ [~ 0] ~ 3 ~ <5 7> ~ | synth bass | scale menor · acordes <0 3 5 2> ~ ~ ~ | synth pad | slow 2 | reverb 0.55.
-- house (cálido, con groove): bpm 122-126 · swing 0.3 en hats, palmada y bajo · ~ ho ~ ho · ~ ~ cp ~ | reverb 0.3 · pianito ~ <7 9 11 9> ~ ~ | synth piano | delay 0.5.
-- acid: bpm 125-140 · 0 0 12 0 ~ 0 12 ~ | synth acid | scale menor | lpf 900 | drive 0.4 · bombo recto.
-- ambient (lento, flotante): bpm 60-75 · sin bombo o muy escaso · pads con notas graves largas <-7 -5> ~ ~ | synth pad | scale penta | slow 8 | reverb 0.7 · melodía escasa 7 ~ ~ 9 ~ | synth piano | delay 0.5 · las notas van rodeadas de silencios, pero cada línea tiene notas.
-- trap: bpm 140 · kit 808 · bd ~ ~ [~ bd] ~ ~ ~ ~ · sn en el tercer tiempo · hats [hh hh hh] hh <hh [hh hh]> hh.
-- breakbeat: bpm 130-140 · bd [~ bd] sn ~ [bd ~] ~ sn [~ bd] · hats sueltos con ?.`;
+RECETAS DE ESTILO (guía, adapta según la petición). Cada ejemplo es una línea completa y válida; las palabras tras -- son comentario, NUNCA van delante del patrón:
+- techno industrial (duro, seco): bpm 135-145 · sin reverb ni delay
+  bd ~ bd ~ | kit 909 | drive 0.6 | sub 0.4 | rumble 0.3 | gain 0.9 -- bombo
+  mt ~ mt ~ ~ | drive 0.5 | gain 0.5 -- percusión en 5 pasos
+  -7 _ ~ ~ -7 _ ~ ~ | synth sub | scale frigia | duck 0.4 | gain 0.6 -- sub
+- techno melódico (emotivo, limpio): bpm 122-128 · kit 909 limpio
+  0 ~ [~ 0] ~ 3 ~ <5 7> ~ | synth bass | scale menor | duck 0.4 | gain 0.7 -- bajo sincopado
+  <0 3 5 2> ~ ~ ~ | synth pad | scale menor | slow 2 | reverb 0.55 | gain 0.5 -- acordes
+- house (cálido, con groove): bpm 122-126 · swing 0.3 en hats, palmada y bajo
+  ~ ho ~ ho | kit 909 | swing 0.3 | gain 0.4 -- hat abierto
+  ~ ~ cp ~ | kit 909 | reverb 0.3 | gain 0.5 -- palmada
+  ~ <7 9 11 9> ~ ~ | synth piano | scale mayor | delay 0.5 | gain 0.45 -- piano
+- acid: bpm 125-140 · bombo recto
+  0^ 0 12 0 _ 0 12 ~ | synth acid | scale menor | cutoff 500 | res 0.7 | env 0.7 | decay 0.3 | drive 0.4 | duck 0.4 | gain 0.6 -- ácido
+- ambient (lento, flotante): bpm 60-75 · sin bombo o muy escaso · notas rodeadas de silencio, pero cada línea tiene notas
+  <-7 -5> ~ ~ | synth pad | scale penta | slow 8 | reverb 0.7 | size 0.9 | gain 0.5 -- suelo
+  7 ~ ~ 9 ~ | synth piano | scale penta | delay 0.5 | reverb 0.5 | gain 0.4 -- melodía escasa
+- trap: bpm 140 · kit 808
+  bd ~ ~ [~ bd] ~ ~ ~ ~ | kit 808 | gain 0.9 -- bombo
+  ~ ~ ~ ~ sn ~ ~ ~ | kit 808 | gain 0.6 -- caja en el tres
+  [hh hh hh] hh <hh [hh hh]> hh | kit 808 | gain 0.35 -- hats
+- breakbeat: bpm 130-140
+  bd [~ bd] sn ~ [bd ~] ~ sn [~ bd] | gain 0.9 -- break
+  hh? hh hh? hh | gain 0.3 -- hats sueltos`;
 
 /** Vibe-coding over an existing pattern: same format, full rewrite. */
 export function adjustMessage(code: string, wish: string): string {

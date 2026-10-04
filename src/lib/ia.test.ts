@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { diffPatterns, extractBpm, playableSlice, sanitizeIaCode, sseDelta } from "./ia";
+import { diffPatterns, extractBpm, playableSlice, repairLine, sanitizeIaCode, sseDelta } from "./ia";
 
 describe("IA output sanitizer", () => {
   it("keeps a clean pattern untouched", () => {
@@ -65,5 +65,32 @@ describe("SSE delta parsing", () => {
     expect(sseDelta('{"response":"","usage":{"neurons":70}}')).toBe("");
     expect(sseDelta('{"tool_calls":[],"p":"ab"}')).toBeNull();
     expect(sseDelta('{"response":"bd')).toBeNull();
+  });
+});
+
+describe("label repair", () => {
+  it("peels the recipe label off a line and keeps it as the comment", () => {
+    expect(repairLine("pianito ~ <7 9 11 9> ~ ~ | synth piano | delay 0.5")).toBe(
+      "~ <7 9 11 9> ~ ~ | synth piano | delay 0.5 -- pianito"
+    );
+    expect(repairLine("bajo sincopado 0 ~ [~ 0] ~ 3 ~ <5 7> ~ | synth bass | scale menor")).toBe(
+      "0 ~ [~ 0] ~ 3 ~ <5 7> ~ | synth bass | scale menor -- bajo sincopado"
+    );
+    expect(repairLine("hats [hh hh hh] hh <hh [hh hh]> hh")).toBe("[hh hh hh] hh <hh [hh hh]> hh -- hats");
+  });
+
+  it("leaves clean lines alone and gives up on lines with nothing playable", () => {
+    expect(repairLine("bd ~ sn ~ | kit 909")).toBe("bd ~ sn ~ | kit 909");
+    expect(repairLine("bajo grave | lpf 300 | drive 0.5")).toBeNull();
+    expect(repairLine("Aquí tienes tu patrón:")).toBeNull();
+  });
+
+  it("the sanitizer rescues a house pattern whose piano and bass were labelled", () => {
+    const raw =
+      "-- bpm 124\nbd ~ bd ~ | kit 909 | gain 0.9\n~ ho ~ ho | swing 0.3\nbajo saltarín 0 ~ [~ 4] ~ 7 ~ | synth bass | swing 0.3\npianito ~ <7 9 11 9> ~ ~ | synth piano | delay 0.5";
+    const clean = sanitizeIaCode(raw);
+    expect(clean.split("\n")).toHaveLength(5);
+    expect(clean).toContain("| synth bass | swing 0.3 -- bajo saltarín");
+    expect(clean).toContain("| synth piano | delay 0.5 -- pianito");
   });
 });
