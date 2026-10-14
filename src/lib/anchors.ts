@@ -26,8 +26,38 @@ const NAVE7_HOOK =
 const NAVE7_SNARE = "~ ~ ~ ~ sn ~ ~ [~ sn?] | kit 909 | drive 0.45 | gain 0.45 -- caja seca en el tres";
 const NAVE7_FOG = "<0 1> ~ ~ ~ ~ ~ ~ ~ | synth pad | scale frigia | slow 4 | lpf 550 | drive 0.25 | duck 0.5 | gain 0.42 -- niebla de polígono";
 
+// "Batiscafo" — the second single. Detroit electro from the sea floor:
+// the 808 x..x..x. kick, the snare on two and four with the clap only on
+// four, sixteenth hats that open at the end of the bar, a step-sequenced
+// bass in sixteenths with octave jumps and portamento, bubbling pluck
+// sequences, parallel minor chords and, every three bars, a whale song —
+// a self-oscillating filter sweep that never lands on a four-bar line.
+const BATI_KICK = "bd ~ ~ bd ~ ~ bd ~ bd ~ ~ bd ~ ~ [bd bd] ~ | kit 808 | drive 0.25 | sub 0.3 | gain 0.9 -- bombo abisal";
+const BATI_SNARE = "~ ~ sn ~ ~ ~ sn ~ | kit 808 | drive 0.2 | reverb 0.2 | gain 0.55 -- la caja, ahí";
+const BATI_HATS = "hh hh hh hh hh hh hh [hh ho] | fast 2 | kit 808 | hpf 600 | cut 0.06 | gain 0.3 -- hats, abierto al final";
+const BATI_CLAP = "~ ~ ~ ~ ~ ~ cp ~ | kit 808 | drive 0.3 | pan 0.15 | gain 0.4 -- palmada solo en el cuatro";
+const BATI_BASS =
+  "0 ~ 0 [0 12] ~ 0 _ 3 ~ 0 ~ [0 12] ~ <5 7> _ -2 | synth acid | scale menor | cutoff 380 | res 0.25 | env 0.55 | decay 0.14 | drive 0.3 | delay 0.25 | duck 0.35 | gain 0.68 -- bajo de dieciséis, octavas y portamento";
+const BATI_COWBELL = "~ ~ ~ cb ~ ~ cb? ~ ~ ~ | kit 808 | delay 0.3 | pan -0.35 | gain 0.3 -- cencerro, 10 pasos";
+const BATI_BUBBLES =
+  "12 ~ 15 ~ 14 ~ <19 17> ~ 12 ~ 15 ~ <14 10> ~ 12? ~ | synth acid | scale menor | cutoff 1200 | res 0.4 | env 0.45 | decay 0.12 | delay 0.45 | pan 0.3 | gain 0.4 | every 4 rev -- burbujas";
+const BATI_PAD = "<0 -2 3 -2> ~ ~ ~ ~ ~ ~ ~ | synth pad | scale menor | slow 4 | lpf 800 | reverb 0.5 | size 0.75 | duck 0.4 | gain 0.4 -- el fondo";
+const BATI_WHALE =
+  "~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ 24 _ _ _ ~ ~ ~ ~ ~ ~ | synth acid | scale menor | cutoff 300 | res 0.95 | env 1 | decay 1.2 | delay 0.6 | reverb 0.6 | size 0.9 | pan -0.4 | gain 0.35 -- canto de ballena, cada tres compases";
+
 export const ANCHORS: Track[] = [
   // ---------------------------------------------------------------- MOTOR
+  anchor(
+    "motor",
+    "Batiscafo",
+    128,
+    [BATI_KICK, BATI_SNARE, BATI_HATS, BATI_CLAP, BATI_BASS, BATI_COWBELL, BATI_BUBBLES, BATI_PAD, BATI_WHALE].join("\n"),
+    [
+      [BATI_KICK, BATI_SNARE, BATI_HATS].join("\n"),
+      [BATI_KICK, BATI_SNARE, BATI_HATS, BATI_CLAP, BATI_BASS, BATI_COWBELL].join("\n"),
+      [BATI_KICK, BATI_SNARE, BATI_HATS, BATI_CLAP, BATI_BASS, BATI_COWBELL, BATI_BUBBLES, BATI_PAD].join("\n"),
+    ]
+  ),
   anchor(
     "motor",
     "Correa de distribución",

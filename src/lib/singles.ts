@@ -23,6 +23,13 @@ export const SINGLES: Single[] = [
     url: "https://soundcloud.com/makinavaja909/nave-7",
     moment: "https://bakaluti.com/#fm=fm&t=1791161410",
   },
+  {
+    title: "Batiscafo",
+    style: "motor",
+    bpm: 128,
+    url: "https://soundcloud.com/makinavaja909/batiscafo",
+    moment: "https://bakaluti.com/#fm=fm&t=1792029605",
+  },
 ];
 
 /** SoundCloud's embeddable player for a single, in the house colour. */
