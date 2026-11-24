@@ -10,6 +10,7 @@ import { parsePattern } from "./lib/parser";
 import { compose } from "./lib/composer";
 import { ANCHORS } from "./lib/anchors";
 import { radioAt } from "./lib/radio";
+import { coverPng } from "./lib/cover";
 
 migrateLegacyStorage(); // bombocaja.* → bakaluti.* before anything reads storage
 
@@ -22,6 +23,7 @@ if (import.meta.env.DEV) {
     compose,
     ANCHORS,
     radioAt,
+    coverPng,
   };
 }
 document.documentElement.lang = getLang();
