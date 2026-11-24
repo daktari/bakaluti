@@ -30,6 +30,13 @@ export const SINGLES: Single[] = [
     url: "https://soundcloud.com/makinavaja909/batiscafo",
     moment: "https://bakaluti.com/#fm=fm&t=1792029605",
   },
+  {
+    title: "Cuaderno de campo",
+    style: "niebla",
+    bpm: 88,
+    url: "https://soundcloud.com/makinavaja909/cuaderno-de-campo",
+    moment: "https://bakaluti.com/#fm=niebla&t=1795556405",
+  },
 ];
 
 /** SoundCloud's embeddable player for a single, in the house colour. */

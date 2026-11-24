@@ -45,6 +45,19 @@ const BATI_PAD = "<0 -2 3 -2> ~ ~ ~ ~ ~ ~ ~ | synth pad | scale menor | slow 4 |
 const BATI_WHALE =
   "~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ 24 _ _ _ ~ ~ ~ ~ ~ ~ | synth acid | scale menor | cutoff 300 | res 0.95 | env 1 | decay 1.2 | delay 0.6 | reverb 0.6 | size 0.9 | pan -0.4 | gain 0.35 -- canto de ballena, cada tres compases";
 
+// "Cuaderno de campo" — the third single. Ambient IDM at 88: a limping
+// LinnDrum kick under tape, a battery of hats that hesitate on a 9-step
+// loop, a lydian pad with a little grit, four piano notes that keep
+// half-remembering themselves, a round sub, and a far answer every
+// fourteen steps. Nothing lands on the line twice in a row.
+const CUAD_KICK = "bd ~ ~ [~ bd] ~ ~ bd ~ | kit linn | lpf 1200 | sub 0.25 | gain 0.85 -- bombo cojo";
+const CUAD_DRUMS = "hh ~ hh? ~ sn ~ [hh hh]? hh? ~ | kit linn | pitch -2 | lpf 3800 | cut 0.09 | swing 0.12 | reverb 0.3 | size 0.3 | gain 0.5 -- batería de cinta, 9 pasos";
+const CUAD_PAD = "<0 4 2 -3> ~ ~ ~ ~ ~ ~ ~ | synth pad | scale lidia | slow 4 | lpf 1100 | drive 0.15 | reverb 0.55 | size 0.8 | duck 0.2 | gain 0.62 -- pad de cinta";
+const CUAD_PIANO =
+  "7 ~ ~ 9 ~ <12 11> ~ ~ ~ <9 7> ~ ~ 4? ~ ~ ~ | synth piano | scale lidia | delay 0.45 | reverb 0.4 | size 0.6 | pan -0.25 | gain 0.56 | every 8 rev -- cuatro notas que recuerdan";
+const CUAD_SUB = "0 _ _ ~ ~ ~ <-3 2> _ | synth sub | scale lidia | slow 2 | duck 0.3 | gain 0.5 -- bajo redondo";
+const CUAD_ANSWER = "~ ~ ~ ~ ~ ~ ~ ~ ~ ~ <14 16> ~ ~ ~ | synth piano | scale lidia | delay 0.55 | reverb 0.5 | size 0.7 | pan 0.35 | gain 0.38 -- la respuesta, cada catorce";
+
 export const ANCHORS: Track[] = [
   // ---------------------------------------------------------------- MOTOR
   anchor(
@@ -214,6 +227,17 @@ hh hh hh hh | kit linn | fast 2 | swing 0.38 | gain 0.24 -- hats
 cb(2,8) | pan 0.45 | gain 0.28 -- cencerro lejano`
   ),
   // --------------------------------------------------------------- NIEBLA
+  anchor(
+    "niebla",
+    "Cuaderno de campo",
+    88,
+    [CUAD_KICK, CUAD_DRUMS, CUAD_PAD, CUAD_PIANO, CUAD_SUB, CUAD_ANSWER].join("\n"),
+    [
+      [CUAD_PAD, CUAD_PIANO, CUAD_SUB].join("\n"),
+      [CUAD_KICK, CUAD_PAD, CUAD_PIANO, CUAD_SUB].join("\n"),
+      [CUAD_KICK, CUAD_DRUMS, CUAD_PAD, CUAD_PIANO, CUAD_SUB].join("\n"),
+    ]
+  ),
   anchor(
     "niebla",
     "Romance en la niebla",
